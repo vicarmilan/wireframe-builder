@@ -225,7 +225,6 @@ export default function ComponentSidebar({ onAdd }: Props) {
           position: 'fixed',
           left: -9999,
           top: 0,
-          width: PREVIEW_WIDTH * DRAG_SCALE,
           overflow: 'hidden',
           pointerEvents: 'none',
           zIndex: -1,
@@ -235,13 +234,7 @@ export default function ComponentSidebar({ onAdd }: Props) {
         }}
       >
         {hoveredDef && (
-          <div
-            style={{
-              width: PREVIEW_WIDTH,
-              transform: `scale(${DRAG_SCALE})`,
-              transformOrigin: 'top left',
-            }}
-          >
+          <div style={{ zoom: DRAG_SCALE }}>
             <WireframeComponent
               component={makePreviewComponent(hoveredDef)}
               editing={false}
@@ -262,20 +255,13 @@ export default function ComponentSidebar({ onAdd }: Props) {
         >
           <div
             className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
-            style={{ width: PREVIEW_WIDTH * HOVER_SCALE, pointerEvents: 'none' }}
+            style={{ pointerEvents: 'none' }}
           >
             <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
               <span className="text-xs font-medium text-gray-600">{preview.def.label}</span>
               <span className="text-[10px] text-gray-400">{preview.def.variant}</span>
             </div>
-            <div
-              style={{
-                width: PREVIEW_WIDTH,
-                transform: `scale(${HOVER_SCALE})`,
-                transformOrigin: 'top left',
-                pointerEvents: 'none',
-              }}
-            >
+            <div style={{ zoom: HOVER_SCALE, pointerEvents: 'none' }}>
               <WireframeComponent
                 component={makePreviewComponent(preview.def)}
                 editing={false}

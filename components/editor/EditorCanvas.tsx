@@ -146,9 +146,7 @@ export default function EditorCanvas({
             {activeComponent ? (
               <div
                 style={{
-                  width: `${100 / OVERLAY_SCALE}%`,
-                  transform: `scale(${OVERLAY_SCALE})`,
-                  transformOrigin: 'top left',
+                  zoom: OVERLAY_SCALE,
                   borderRadius: 12,
                   overflow: 'hidden',
                   boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
