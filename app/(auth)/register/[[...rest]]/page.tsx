@@ -56,7 +56,7 @@ function RegisterForm() {
     try {
       const result = await signUp.create({
         strategy: 'ticket',
-        ticket,
+        ticket: ticket ?? undefined,
         firstName,
         lastName,
         password,
