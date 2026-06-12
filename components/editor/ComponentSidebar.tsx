@@ -14,7 +14,7 @@ interface Props {
 
 const PREVIEW_WIDTH = 1024
 const DRAG_SCALE = 0.5
-const HOVER_SCALE = 0.28
+const HOVER_SCALE = 0.5
 
 function makePreviewComponent(def: ComponentDefinition) {
   return {
@@ -250,17 +250,13 @@ export default function ComponentSidebar({ onAdd }: Props) {
           className="fixed z-50 pointer-events-none"
           style={{
             left: 264 + 12,
-            top: Math.max(8, Math.min(preview.y - 20, window.innerHeight - PREVIEW_WIDTH * HOVER_SCALE - 16)),
+            top: Math.max(8, Math.min(preview.y - 20, window.innerHeight - 300)),
           }}
         >
           <div
             className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
             style={{ pointerEvents: 'none' }}
           >
-            <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-600">{preview.def.label}</span>
-              <span className="text-[10px] text-gray-400">{preview.def.variant}</span>
-            </div>
             <div style={{ zoom: HOVER_SCALE, pointerEvents: 'none' }}>
               <WireframeComponent
                 component={makePreviewComponent(preview.def)}
