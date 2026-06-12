@@ -22,8 +22,6 @@ import { GripVertical, Plus } from 'lucide-react'
 import { PageComponent, ComponentDefinition } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
 
-const OVERLAY_SCALE = 0.5
-
 interface Props {
   components: PageComponent[]
   selectedId: string | null
@@ -46,29 +44,18 @@ export default function EditorCanvas({
   justDroppedId,
 }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
-  const [activeComponent, setActiveComponent] = useState<PageComponent | null>(null)
-  const [activeDragSize, setActiveDragSize] = useState<{ width: number; height: number } | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
+  const activeComponent = activeId ? components.find((c) => c.id === activeId) ?? null : null
+
   function handleDragStart(event: DragStartEvent) {
-    const comp = components.find((c) => c.id === event.active.id)
-    if (comp) setActiveComponent(comp)
-    // Try to get dimensions from the DOM element directly
-    const el = document.querySelector(`[data-sortable-item][data-id="${event.active.id}"]`) as HTMLElement
-      ?? document.getElementById(`sortable-${event.active.id}`) as HTMLElement
-    if (el) {
-      const rect = el.getBoundingClientRect()
-      setActiveDragSize({ width: rect.width, height: rect.height })
-    } else {
-      const rect = event.active.rect.current.initial
-      if (rect) setActiveDragSize({ width: rect.width, height: rect.height })
-    }
+    setActiveId(String(event.active.id))
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    setActiveComponent(null)
-    setActiveDragSize(null)
+    setActiveId(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
     const oldIndex = components.findIndex((c) => c.id === active.id)
@@ -76,7 +63,6 @@ export default function EditorCanvas({
     onReorder(arrayMove(components, oldIndex, newIndex))
   }
 
-  // HTML5 drag handlers for sidebar drops
   function handleCanvasDragOver(e: React.DragEvent) {
     if (!e.dataTransfer.types.includes('application/vicar-component')) return
     e.preventDefault()
@@ -144,7 +130,6 @@ export default function EditorCanvas({
                   onSelect={() => onSelect(component.id)}
                   onPropChange={(key, value) => onPropChange(component.id, key, value)}
                   isNew={justDroppedId === component.id}
-                  isDragging={activeComponent?.id === component.id}
                 />
               </div>
             ))}
@@ -153,31 +138,21 @@ export default function EditorCanvas({
             )}
           </SortableContext>
 
-          {/* Scaled drag overlay for reorder */}
           <DragOverlay dropAnimation={null}>
             {activeComponent ? (
-              <div
-                style={{
-                  ...(activeDragSize ? {
-                    width: activeDragSize.width * OVERLAY_SCALE,
-                    height: activeDragSize.height * OVERLAY_SCALE,
-                    overflow: 'hidden',
-                  } : {}),
-                  borderRadius: 12,
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
-                  pointerEvents: 'none',
-                }}
-              >
-                <div style={{
-                  zoom: OVERLAY_SCALE,
-                  ...(activeDragSize ? { width: activeDragSize.width, height: activeDragSize.height } : {}),
-                }}>
-                  <WireframeComponent
-                    component={activeComponent}
-                    editing={false}
-                    onPropChange={() => {}}
-                  />
-                </div>
+              <div style={{
+                zoom: 0.5,
+                borderRadius: 12,
+                overflow: 'hidden',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+                background: 'white',
+                pointerEvents: 'none',
+              }}>
+                <WireframeComponent
+                  component={activeComponent}
+                  editing={false}
+                  onPropChange={() => {}}
+                />
               </div>
             ) : null}
           </DragOverlay>
@@ -218,16 +193,14 @@ function SortableItem({
   onSelect,
   onPropChange,
   isNew,
-  isDragging,
 }: {
   component: PageComponent
   selected: boolean
   onSelect: () => void
   onPropChange: (key: string, value: string) => void
   isNew?: boolean
-  isDragging?: boolean
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: component.id,
   })
 
@@ -237,7 +210,6 @@ function SortableItem({
   }
 
   if (isDragging) {
-    // Placeholder where the item was — subtle outline, no content shown
     return (
       <div
         ref={setNodeRef}
@@ -253,7 +225,6 @@ function SortableItem({
       ref={setNodeRef}
       style={style}
       data-sortable-item
-      data-id={component.id}
       className={`relative group mb-2 rounded-xl overflow-hidden border-2 transition-colors ${
         selected ? 'border-[#2563EB]' : 'border-transparent hover:border-gray-200'
       } ${isNew ? 'animate-drop-in' : ''}`}
