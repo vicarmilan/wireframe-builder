@@ -27,7 +27,8 @@ interface Props {
   onReorder: (components: PageComponent[]) => void
   onPropChange: (id: string, key: string, value: string) => void
   onAddClick: () => void
-  onAddAt: (def: ComponentDefinition, index: number) => void
+  onAddAt: (def: ComponentDefinition, index: number) => Promise<string | undefined>
+  justDroppedId?: string | null
 }
 
 export default function EditorCanvas({
@@ -38,6 +39,7 @@ export default function EditorCanvas({
   onPropChange,
   onAddClick,
   onAddAt,
+  justDroppedId,
 }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
   const [dropIndex, setDropIndex] = useState<number | null>(null)
@@ -124,6 +126,7 @@ export default function EditorCanvas({
                   selected={selectedId === component.id}
                   onSelect={() => onSelect(component.id)}
                   onPropChange={(key, value) => onPropChange(component.id, key, value)}
+                  isNew={justDroppedId === component.id}
                 />
               </div>
             ))}
@@ -168,20 +171,21 @@ function SortableItem({
   selected,
   onSelect,
   onPropChange,
+  isNew,
 }: {
   component: PageComponent
   selected: boolean
   onSelect: () => void
   onPropChange: (key: string, value: string) => void
+  isNew?: boolean
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: component.id,
   })
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: isDragging ? transition : undefined,
   }
 
   return (
@@ -191,7 +195,7 @@ function SortableItem({
       data-sortable-item
       className={`relative group mb-2 rounded-xl overflow-hidden border-2 transition-colors ${
         selected ? 'border-[#2563EB]' : 'border-transparent hover:border-gray-200'
-      }`}
+      } ${isNew ? 'animate-drop-in' : ''}`}
       onClick={onSelect}
     >
       {/* Drag handle */}

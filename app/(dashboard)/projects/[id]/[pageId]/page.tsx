@@ -20,6 +20,7 @@ export default function PageEditorPage({
   const [page, setPage] = useState<Page | null>(null)
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [justDroppedId, setJustDroppedId] = useState<string | null>(null)
 
   const {
     components,
@@ -61,7 +62,7 @@ export default function PageEditorPage({
     setSelected(comp.id)
   }
 
-  async function handleAddAt(def: ComponentDefinition, index: number) {
+  async function handleAddAt(def: ComponentDefinition, index: number): Promise<string | undefined> {
     const res = await fetch(`/api/pages/${pageId}/components`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,16 +73,13 @@ export default function PageEditorPage({
       }),
     })
     const comp = await res.json()
-    // Insert at the right position
     const currentComponents = useEditorStore.getState().components
     const newComponents = [...currentComponents, comp]
-    // Move the newly added component to the desired index
     const from = newComponents.length - 1
     const to = Math.min(index, newComponents.length - 1)
     if (from !== to) {
       const reordered = arrayMove(newComponents, from, to)
       reorderComponents(reordered)
-      // Persist order
       await fetch(`/api/pages/${pageId}/components`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -93,6 +91,10 @@ export default function PageEditorPage({
       addComponent(comp)
     }
     setSelected(comp.id)
+    // Trigger drop animation
+    setJustDroppedId(comp.id)
+    setTimeout(() => setJustDroppedId(null), 400)
+    return comp.id
   }
 
   const handlePropChange = useCallback(
@@ -194,6 +196,7 @@ export default function PageEditorPage({
           onPropChange={handlePropChange}
           onAddClick={() => setSidebarOpen(true)}
           onAddAt={handleAddAt}
+          justDroppedId={justDroppedId}
         />
 
         {selectedComponent && (

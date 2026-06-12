@@ -15,3 +15,22 @@ body {
 * {
   box-sizing: border-box;
 }
+
+@keyframes dropIn {
+  0% {
+    transform: scale(0.5);
+    transform-origin: top center;
+  }
+  60% {
+    transform: scale(1.02);
+    transform-origin: top center;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: top center;
+  }
+}
+
+.animate-drop-in {
+  animation: dropIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

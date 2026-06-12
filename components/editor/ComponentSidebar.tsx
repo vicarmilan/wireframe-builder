@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Search, X, ChevronLeft } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { COMPONENT_CATEGORIES, getComponentsByType } from '@/lib/components-registry'
@@ -12,13 +13,29 @@ interface Props {
 }
 
 const PREVIEW_WIDTH = 1024
-const PREVIEW_SCALE = 0.28
+const DRAG_SCALE = 0.5
+const HOVER_SCALE = 0.28
+
+function makePreviewComponent(def: ComponentDefinition) {
+  return {
+    id: 'preview',
+    page_id: 'preview',
+    component_type: def.type,
+    component_variant: def.variant,
+    order: 0,
+    props: {},
+    created_at: '',
+    updated_at: '',
+  }
+}
 
 export default function ComponentSidebar({ onAdd }: Props) {
   const [search, setSearch] = useState('')
   const [activeType, setActiveType] = useState<ComponentType | null>(null)
   const [preview, setPreview] = useState<{ def: ComponentDefinition; y: number } | null>(null)
+  const [dragDef, setDragDef] = useState<ComponentDefinition | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dragGhostRef = useRef<HTMLDivElement>(null)
 
   const showPreview = useCallback((def: ComponentDefinition, y: number) => {
     if (hideTimer.current) clearTimeout(hideTimer.current)
@@ -45,12 +62,31 @@ export default function ComponentSidebar({ onAdd }: Props) {
     e.dataTransfer.setData('application/vicar-component', JSON.stringify(def))
     e.dataTransfer.effectAllowed = 'copy'
     setPreview(null)
+    setDragDef(def)
+
+    // Use the hidden ghost element as drag image
+    if (dragGhostRef.current) {
+      // Small delay to let React render the dragDef into the ghost
+      requestAnimationFrame(() => {
+        if (dragGhostRef.current) {
+          e.dataTransfer.setDragImage(
+            dragGhostRef.current,
+            dragGhostRef.current.offsetWidth / 2,
+            30
+          )
+        }
+      })
+    }
+  }
+
+  function handleDragEnd() {
+    setDragDef(null)
   }
 
   return (
     <>
       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-full overflow-hidden">
-        {/* Search bar */}
+        {/* Search */}
         <div className="p-4 border-b border-gray-100 flex-shrink-0">
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" />
@@ -69,11 +105,10 @@ export default function ComponentSidebar({ onAdd }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* Category list view */}
+          {/* Category list */}
           {!search && !activeType && (
             <div className="p-3 space-y-0.5">
               {COMPONENT_CATEGORIES.map((cat) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const IconComp = (Icons as unknown as Record<string, React.ElementType>)[cat.icon]
                 return (
                   <button
@@ -93,10 +128,9 @@ export default function ComponentSidebar({ onAdd }: Props) {
             </div>
           )}
 
-          {/* Component list view (submenu) */}
+          {/* Component list (submenu) */}
           {(search || activeType) && (
             <div>
-              {/* Back button / category header */}
               {!search && activeType && (
                 <div className="flex items-center gap-1 px-3 pt-3 pb-2 border-b border-gray-50 sticky top-0 bg-white z-10">
                   <button
@@ -122,6 +156,7 @@ export default function ComponentSidebar({ onAdd }: Props) {
                       key={`${def.type}-${def.variant}`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, def)}
+                      onDragEnd={handleDragEnd}
                       onMouseEnter={(e) => {
                         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                         showPreview(def, rect.top)
@@ -152,45 +187,67 @@ export default function ComponentSidebar({ onAdd }: Props) {
         </div>
       </aside>
 
-      {/* Hover preview portal */}
+      {/* Hidden drag ghost – rendered off-screen, used as custom drag image */}
+      <div
+        ref={dragGhostRef}
+        aria-hidden
+        style={{
+          position: 'fixed',
+          left: -9999,
+          top: 0,
+          width: PREVIEW_WIDTH * DRAG_SCALE,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          zIndex: -1,
+          borderRadius: 12,
+          background: 'white',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+        }}
+      >
+        {dragDef && (
+          <div
+            style={{
+              width: PREVIEW_WIDTH,
+              transform: `scale(${DRAG_SCALE})`,
+              transformOrigin: 'top left',
+            }}
+          >
+            <WireframeComponent
+              component={makePreviewComponent(dragDef)}
+              editing={false}
+              onPropChange={() => {}}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Hover preview */}
       {preview && (
         <div
           className="fixed z-50 pointer-events-none"
           style={{
             left: 264 + 12,
-            top: Math.max(8, Math.min(preview.y - 20, window.innerHeight - PREVIEW_WIDTH * PREVIEW_SCALE - 16)),
+            top: Math.max(8, Math.min(preview.y - 20, window.innerHeight - PREVIEW_WIDTH * HOVER_SCALE - 16)),
           }}
-          onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
-          onMouseLeave={hidePreview}
         >
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
-            style={{ width: PREVIEW_WIDTH * PREVIEW_SCALE, pointerEvents: 'none' }}>
-            {/* Label */}
+          <div
+            className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+            style={{ width: PREVIEW_WIDTH * HOVER_SCALE, pointerEvents: 'none' }}
+          >
             <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
               <span className="text-xs font-medium text-gray-600">{preview.def.label}</span>
               <span className="text-[10px] text-gray-400">{preview.def.variant}</span>
             </div>
-            {/* Scaled wireframe */}
             <div
               style={{
                 width: PREVIEW_WIDTH,
-                transform: `scale(${PREVIEW_SCALE})`,
+                transform: `scale(${HOVER_SCALE})`,
                 transformOrigin: 'top left',
-                height: 'auto',
                 pointerEvents: 'none',
               }}
             >
               <WireframeComponent
-                component={{
-                  id: 'preview',
-                  page_id: 'preview',
-                  component_type: preview.def.type,
-                  component_variant: preview.def.variant,
-                  order: 0,
-                  props: {},
-                  created_at: '',
-                  updated_at: '',
-                }}
+                component={makePreviewComponent(preview.def)}
                 editing={false}
                 onPropChange={() => {}}
               />
