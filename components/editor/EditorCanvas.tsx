@@ -54,8 +54,16 @@ export default function EditorCanvas({
   function handleDragStart(event: DragStartEvent) {
     const comp = components.find((c) => c.id === event.active.id)
     if (comp) setActiveComponent(comp)
-    const rect = event.active.rect.current.translated ?? event.active.rect.current.initial
-    if (rect) setActiveDragSize({ width: rect.width, height: rect.height })
+    // Try to get dimensions from the DOM element directly
+    const el = document.querySelector(`[data-sortable-item][data-id="${event.active.id}"]`) as HTMLElement
+      ?? document.getElementById(`sortable-${event.active.id}`) as HTMLElement
+    if (el) {
+      const rect = el.getBoundingClientRect()
+      setActiveDragSize({ width: rect.width, height: rect.height })
+    } else {
+      const rect = event.active.rect.current.initial
+      if (rect) setActiveDragSize({ width: rect.width, height: rect.height })
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -147,20 +155,23 @@ export default function EditorCanvas({
 
           {/* Scaled drag overlay for reorder */}
           <DragOverlay dropAnimation={null}>
-            {activeComponent && activeDragSize ? (
-              // Outer div: explicit size at 50% — forces DragOverlay to the correct dimensions
+            {activeComponent ? (
               <div
                 style={{
-                  width: activeDragSize.width * OVERLAY_SCALE,
-                  height: activeDragSize.height * OVERLAY_SCALE,
+                  ...(activeDragSize ? {
+                    width: activeDragSize.width * OVERLAY_SCALE,
+                    height: activeDragSize.height * OVERLAY_SCALE,
+                    overflow: 'hidden',
+                  } : {}),
                   borderRadius: 12,
-                  overflow: 'hidden',
                   boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
                   pointerEvents: 'none',
                 }}
               >
-                {/* Inner div: zoom scales content + layout to fill the outer box */}
-                <div style={{ zoom: OVERLAY_SCALE, width: activeDragSize.width, height: activeDragSize.height }}>
+                <div style={{
+                  zoom: OVERLAY_SCALE,
+                  ...(activeDragSize ? { width: activeDragSize.width, height: activeDragSize.height } : {}),
+                }}>
                   <WireframeComponent
                     component={activeComponent}
                     editing={false}
@@ -242,6 +253,7 @@ function SortableItem({
       ref={setNodeRef}
       style={style}
       data-sortable-item
+      data-id={component.id}
       className={`relative group mb-2 rounded-xl overflow-hidden border-2 transition-colors ${
         selected ? 'border-[#2563EB]' : 'border-transparent hover:border-gray-200'
       } ${isNew ? 'animate-drop-in' : ''}`}
