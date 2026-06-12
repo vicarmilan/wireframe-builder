@@ -45,17 +45,23 @@ export default function EditorCanvas({
 }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeDragWidth, setActiveDragWidth] = useState<number | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
   const activeComponent = activeId ? components.find((c) => c.id === activeId) ?? null : null
 
   function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id))
+    const id = String(event.active.id)
+    setActiveId(id)
+    // Measure the element width before React re-renders it as a placeholder
+    const el = document.querySelector(`[data-id="${id}"]`) as HTMLElement
+    if (el) setActiveDragWidth(el.getBoundingClientRect().width)
   }
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveId(null)
+    setActiveDragWidth(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
     const oldIndex = components.findIndex((c) => c.id === active.id)
@@ -140,19 +146,22 @@ export default function EditorCanvas({
 
           <DragOverlay dropAnimation={null}>
             {activeComponent ? (
+              // Outer: explicit half-width so the overlay container is the right size
               <div style={{
-                zoom: 0.5,
-                borderRadius: 12,
+                width: (activeDragWidth ?? 800) * 0.5,
                 overflow: 'hidden',
+                borderRadius: 12,
                 boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
-                background: 'white',
                 pointerEvents: 'none',
               }}>
-                <WireframeComponent
-                  component={activeComponent}
-                  editing={false}
-                  onPropChange={() => {}}
-                />
+                {/* Inner: zoom scales content + its layout to match the outer width */}
+                <div style={{ zoom: 0.5, width: activeDragWidth ?? 800 }}>
+                  <WireframeComponent
+                    component={activeComponent}
+                    editing={false}
+                    onPropChange={() => {}}
+                  />
+                </div>
               </div>
             ) : null}
           </DragOverlay>
@@ -225,6 +234,7 @@ function SortableItem({
       ref={setNodeRef}
       style={style}
       data-sortable-item
+      data-id={component.id}
       className={`relative group mb-2 rounded-xl overflow-hidden border-2 transition-colors ${
         selected ? 'border-[#2563EB]' : 'border-transparent hover:border-gray-200'
       } ${isNew ? 'animate-drop-in' : ''}`}
