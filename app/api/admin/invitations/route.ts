@@ -24,7 +24,6 @@ export async function POST(req: Request) {
     await client.invitations.createInvitation({
       emailAddress: email,
       publicMetadata: { role: role ?? 'client' },
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://vicar-builder.vercel.app'}/dashboard`,
       ignoreExisting: true,
     })
     return NextResponse.json({ ok: true })
