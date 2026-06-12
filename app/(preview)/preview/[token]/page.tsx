@@ -99,20 +99,58 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
           </div>
         </div>
 
-        {/* Page tabs */}
+        {/* Page tabs with dropdowns for children */}
         {project && project.pages.length > 1 && (
-          <div className="flex gap-1">
-            {project.pages.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => setActivePage(page.id)}
-                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  activePage === page.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                {page.name}
-              </button>
-            ))}
+          <div className="flex gap-1 items-center">
+            {project.pages
+              .filter((p) => !p.parent_id)
+              .map((page) => {
+                const children = project.pages.filter((p) => p.parent_id === page.id)
+                const isActive = activePage === page.id || children.some((c) => c.id === activePage)
+                if (children.length === 0) {
+                  return (
+                    <button
+                      key={page.id}
+                      onClick={() => setActivePage(page.id)}
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors whitespace-nowrap ${
+                        isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page.name}
+                    </button>
+                  )
+                }
+                return (
+                  <div key={page.id} className="relative group">
+                    <button
+                      onClick={() => setActivePage(page.id)}
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap ${
+                        isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page.name}
+                      <svg width="10" height="6" viewBox="0 0 10 6" className="opacity-50 mt-px" fill="none">
+                        <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                    <div className="absolute top-full left-0 pt-1 hidden group-hover:block z-50">
+                      <div className="bg-white border border-gray-100 rounded-xl shadow-lg py-1 min-w-[160px]">
+                        {children.map((child) => (
+                          <button
+                            key={child.id}
+                            onClick={() => setActivePage(child.id)}
+                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                              activePage === child.id ? 'text-blue-700 font-medium bg-blue-50' : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {child.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
           </div>
         )}
 
