@@ -13,7 +13,7 @@ export const COMPONENT_CATEGORIES: { type: ComponentType; label: string; icon: s
   { type: 'blog', label: 'Blog', icon: 'BookOpen' },
   { type: 'faq', label: 'FAQ', icon: 'HelpCircle' },
   { type: 'contact', label: 'Contact', icon: 'Mail' },
-  { type: 'footer', label: 'Footer', icon: 'AlignBottom' },
+  { type: 'footer', label: 'Footer', icon: 'PanelBottom' },
   { type: 'restaurant', label: 'Restaurant', icon: 'UtensilsCrossed' },
   { type: 'hotel', label: 'Hotel', icon: 'BedDouble' },
   { type: 'marketplace', label: 'Marketplace', icon: 'ShoppingBag' },
