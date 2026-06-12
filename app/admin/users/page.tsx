@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Shield, User, Search } from 'lucide-react'
+import { ArrowLeft, Shield, User, Search, UserPlus, Send, X, Mail, Clock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -48,17 +48,64 @@ interface ClerkUser {
   lastActiveAt: number | null
 }
 
+interface Invitation {
+  id: string
+  email: string
+  role: 'admin' | 'client'
+  createdAt: number
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<ClerkUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [updating, setUpdating] = useState<string | null>(null)
+  const [showInvite, setShowInvite] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<'admin' | 'client'>('client')
+  const [inviting, setInviting] = useState(false)
+  const [inviteError, setInviteError] = useState('')
+  const [inviteSuccess, setInviteSuccess] = useState(false)
+  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([])
 
   useEffect(() => {
     fetch('/api/admin/users')
       .then((r) => r.json())
       .then((data) => { setUsers(Array.isArray(data) ? data : []); setLoading(false) })
+    fetch('/api/admin/invitations')
+      .then((r) => r.json())
+      .then((data) => { setPendingInvitations(Array.isArray(data) ? data : []) })
   }, [])
+
+  async function sendInvitation() {
+    if (!inviteEmail.trim()) return
+    setInviting(true)
+    setInviteError('')
+    const res = await fetch('/api/admin/invitations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+    })
+    const data = await res.json()
+    setInviting(false)
+    if (!res.ok) {
+      setInviteError(data.error || 'Er ging iets mis')
+      return
+    }
+    setInviteSuccess(true)
+    setInviteEmail('')
+    fetch('/api/admin/invitations').then((r) => r.json()).then((d) => setPendingInvitations(Array.isArray(d) ? d : []))
+    setTimeout(() => { setInviteSuccess(false); setShowInvite(false) }, 2000)
+  }
+
+  async function revokeInvitation(invitationId: string) {
+    await fetch('/api/admin/invitations', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invitationId }),
+    })
+    setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId))
+  }
 
   async function setRole(userId: string, role: 'admin' | 'client') {
     setUpdating(userId)
@@ -91,16 +138,96 @@ export default function AdminUsersPage() {
             <h1 className="font-semibold text-gray-900">Gebruikersbeheer</h1>
           </div>
         </div>
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Zoek op naam of email..."
-            className="pl-8 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Zoek op naam of email..."
+              className="pl-8 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+            />
+          </div>
+          <button
+            onClick={() => { setShowInvite(true); setInviteError(''); setInviteSuccess(false) }}
+            className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <UserPlus size={15} />
+            Uitnodigen
+          </button>
         </div>
       </header>
+
+      {/* Invite modal */}
+      {showInvite && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <UserPlus size={18} className="text-[#2563EB]" />
+                <h2 className="font-semibold text-gray-900">Gebruiker uitnodigen</h2>
+              </div>
+              <button onClick={() => setShowInvite(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            {inviteSuccess ? (
+              <div className="text-center py-6 text-green-600 font-medium">Uitnodiging verstuurd!</div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">E-mailadres</label>
+                  <div className="relative">
+                    <Mail size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendInvitation()}
+                      placeholder="naam@bedrijf.be"
+                      autoFocus
+                      className="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Rol</label>
+                  <div className="flex gap-2">
+                    {(['client', 'admin'] as const).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setInviteRole(r)}
+                        className={`flex-1 py-2 text-sm rounded-lg border transition-colors font-medium ${
+                          inviteRole === r
+                            ? 'bg-blue-50 border-blue-300 text-blue-700'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {r === 'client' ? 'Klant' : 'Admin'}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    {inviteRole === 'client'
+                      ? 'Kan enkel previews bekijken waarvoor ze zijn uitgenodigd.'
+                      : 'Heeft toegang tot het volledige dashboard.'}
+                  </p>
+                </div>
+                {inviteError && <p className="text-xs text-red-500">{inviteError}</p>}
+                <button
+                  onClick={sendInvitation}
+                  disabled={inviting || !inviteEmail.trim()}
+                  className="w-full flex items-center justify-center gap-2 bg-[#2563EB] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <Send size={14} />
+                  {inviting ? 'Versturen...' : 'Uitnodiging versturen'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <main className="max-w-4xl mx-auto px-8 py-10 space-y-8">
         {loading ? (
@@ -132,6 +259,33 @@ export default function AdminUsersPage() {
               ))}
               {clients.length === 0 && <EmptyRow label="Geen klanten gevonden" />}
             </Section>
+
+            {pendingInvitations.length > 0 && (
+              <Section
+                title="Openstaande uitnodigingen"
+                icon={<Clock size={15} className="text-amber-500" />}
+                count={pendingInvitations.length}
+                description="Deze gebruikers hebben hun uitnodiging nog niet geaccepteerd."
+              >
+                {pendingInvitations.map((inv) => (
+                  <div key={inv.id} className="flex items-center gap-4 px-5 py-3.5">
+                    <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                      <Mail size={14} className="text-amber-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-700 truncate">{inv.email}</div>
+                      <div className="text-xs text-gray-400">Uitgenodigd als {inv.role === 'admin' ? 'Admin' : 'Klant'}</div>
+                    </div>
+                    <button
+                      onClick={() => revokeInvitation(inv.id)}
+                      className="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded hover:bg-red-50"
+                    >
+                      Intrekken
+                    </button>
+                  </div>
+                ))}
+              </Section>
+            )}
           </>
         )}
       </main>
