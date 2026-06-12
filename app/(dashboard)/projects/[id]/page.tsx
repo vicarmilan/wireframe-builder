@@ -54,6 +54,16 @@ function getProjection(
   const overIndex = items.findIndex((i) => i.id === overId)
   if (activeIndex === -1 || overIndex === -1) return null
 
+  const overItem = items[overIndex]
+
+  // Special case: dragging an item UP onto the item directly above it while
+  // pulling right. arrayMove would place the active item BEFORE the over item,
+  // leaving no previous item and making nesting impossible. Detect this and
+  // treat it as "drop as child of the over item" instead.
+  if (activeIndex > overIndex && dragOffsetLeft > INDENT_WIDTH / 2) {
+    return { depth: overItem.depth + 1, parentId: overItem.id }
+  }
+
   const newItems = arrayMove(items, activeIndex, overIndex)
   const newIndex = newItems.findIndex((i) => i.id === activeId)
   const previousItem = newItems[newIndex - 1]
