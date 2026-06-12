@@ -3,19 +3,17 @@
 import { useState, useEffect, use } from 'react'
 import { ArrowLeft, Plus, FileText, ExternalLink, Copy, Check } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Project, Page } from '@/types'
 import { formatDate } from '@/lib/utils'
+import NewPageModal from '@/components/editor/NewPageModal'
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [project, setProject] = useState<Project | null>(null)
   const [pages, setPages] = useState<Page[]>([])
   const [loading, setLoading] = useState(true)
-  const [showAddPage, setShowAddPage] = useState(false)
-  const [newPageName, setNewPageName] = useState('')
+  const [showModal, setShowModal] = useState(false)
   const [copied, setCopied] = useState(false)
-  const router = useRouter()
 
   useEffect(() => {
     Promise.all([
@@ -28,19 +26,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     })
   }, [id])
 
-  async function addPage(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newPageName.trim()) return
-
-    const res = await fetch(`/api/projects/${id}/pages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newPageName.trim() }),
-    })
-    const page = await res.json()
+  function onPageCreated(page: Page) {
     setPages((prev) => [...prev, page])
-    setNewPageName('')
-    setShowAddPage(false)
+    setShowModal(false)
   }
 
   function copyPreviewLink() {
@@ -95,7 +83,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Pagina&apos;s</h2>
           <button
-            onClick={() => setShowAddPage(true)}
+            onClick={() => setShowModal(true)}
             className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             <Plus size={16} />
@@ -121,35 +109,29 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             </Link>
           ))}
 
-          {pages.length === 0 && !showAddPage && (
+          {pages.length === 0 && (
             <div className="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
               <FileText size={36} className="mx-auto text-gray-300 mb-3" />
               <p className="text-gray-500 font-medium">Nog geen pagina&apos;s</p>
               <p className="text-gray-400 text-sm mt-1">Voeg je eerste pagina toe</p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="mt-5 bg-[#2563EB] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                Pagina toevoegen
+              </button>
             </div>
-          )}
-
-          {showAddPage && (
-            <form onSubmit={addPage} className="bg-white rounded-xl px-6 py-4 border-2 border-blue-200 flex items-center gap-3">
-              <FileText size={18} className="text-gray-400 flex-shrink-0" />
-              <input
-                value={newPageName}
-                onChange={(e) => setNewPageName(e.target.value)}
-                placeholder="Paginanaam, bijv. Homepage"
-                className="flex-1 text-sm focus:outline-none"
-                autoFocus
-                onKeyDown={(e) => e.key === 'Escape' && setShowAddPage(false)}
-              />
-              <button type="submit" className="text-blue-600 text-sm font-medium hover:text-blue-700">
-                Opslaan
-              </button>
-              <button type="button" onClick={() => setShowAddPage(false)} className="text-gray-400 text-sm hover:text-gray-600">
-                Annuleren
-              </button>
-            </form>
           )}
         </div>
       </main>
+
+      {showModal && (
+        <NewPageModal
+          projectId={id}
+          onClose={() => setShowModal(false)}
+          onCreated={onPageCreated}
+        />
+      )}
     </div>
   )
 }
