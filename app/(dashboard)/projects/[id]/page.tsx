@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import {
   ArrowLeft, Plus, FileText, ExternalLink, Copy, Check, Code2,
-  GripVertical, Pencil, Trash2, X, AlertTriangle, ChevronRight, ChevronDown,
+  GripVertical, Pencil, Trash2, X, AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Project, Page } from '@/types'
@@ -11,14 +11,18 @@ import { formatDate } from '@/lib/utils'
 import NewPageModal from '@/components/editor/NewPageModal'
 import ImportPagesModal from '@/components/editor/ImportPagesModal'
 import {
-  DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter,
+  DndContext, DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent,
+  PointerSensor, useSensor, useSensors, closestCenter, DragOverlay, Active,
 } from '@dnd-kit/core'
 import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-// Build a tree from a flat list
+const INDENT_WIDTH = 24
+
+type FlatPage = Page & { depth: number }
+
 function buildTree(pages: Page[]): Page[] {
   const map: Record<string, Page> = {}
   const roots: Page[] = []
@@ -33,14 +37,49 @@ function buildTree(pages: Page[]): Page[] {
   return roots
 }
 
-// Flatten tree to ordered list (for sibling reordering)
-function flattenSiblings(pages: Page[]): Page[] {
-  const result: Page[] = []
-  for (const p of pages) {
-    result.push(p)
-    if (p.children?.length) result.push(...flattenSiblings(p.children))
+function flattenTree(pages: Page[], depth = 0): FlatPage[] {
+  return pages.flatMap((p) => [
+    { ...p, depth },
+    ...flattenTree(p.children ?? [], depth + 1),
+  ])
+}
+
+function getProjection(
+  items: FlatPage[],
+  activeId: string,
+  overId: string,
+  dragOffsetLeft: number
+): { depth: number; parentId: string | null } | null {
+  const activeIndex = items.findIndex((i) => i.id === activeId)
+  const overIndex = items.findIndex((i) => i.id === overId)
+  if (activeIndex === -1 || overIndex === -1) return null
+
+  const newItems = arrayMove(items, activeIndex, overIndex)
+  const newIndex = newItems.findIndex((i) => i.id === activeId)
+  const previousItem = newItems[newIndex - 1]
+  const nextItem = newItems[newIndex + 1]
+
+  const dragDepth = Math.round(dragOffsetLeft / INDENT_WIDTH)
+  const rawDepth = (newItems[newIndex].depth ?? 0) + dragDepth
+
+  const maxDepth = previousItem ? previousItem.depth + 1 : 0
+  const minDepth = nextItem ? nextItem.depth : 0
+  const depth = Math.max(minDepth, Math.min(rawDepth, maxDepth))
+
+  let parentId: string | null = null
+  if (depth > 0 && previousItem) {
+    if (previousItem.depth === depth - 1) {
+      parentId = previousItem.id
+    } else if (previousItem.depth >= depth) {
+      const ancestor = newItems
+        .slice(0, newIndex)
+        .reverse()
+        .find((i) => i.depth === depth - 1)
+      parentId = ancestor?.id ?? null
+    }
   }
-  return result
+
+  return { depth, parentId }
 }
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -54,6 +93,12 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [copied, setCopied] = useState(false)
   const [editingPage, setEditingPage] = useState<Page | null>(null)
   const [deletingPage, setDeletingPage] = useState<Page | null>(null)
+
+  // DnD state
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
+  const [offsetLeft, setOffsetLeft] = useState(0)
+  const offsetLeftRef = useRef(0)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
@@ -86,36 +131,88 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     setTimeout(() => setCopied(false), 2000)
   }
 
-  async function handleDragEnd(event: DragEndEvent, siblings: Page[], parentId: string | null) {
-    const { active, over } = event
+  function handleDragStart({ active }: DragStartEvent) {
+    setActiveId(active.id as string)
+    setOverId(active.id as string)
+  }
+
+  function handleDragMove({ delta }: DragMoveEvent) {
+    offsetLeftRef.current = delta.x
+    setOffsetLeft(delta.x)
+  }
+
+  function handleDragOver({ over }: DragOverEvent) {
+    setOverId(over?.id as string ?? null)
+  }
+
+  async function handleDragEnd({ active, over }: DragEndEvent) {
+    setActiveId(null)
+    setOverId(null)
+    setOffsetLeft(0)
+
     if (!over || active.id === over.id) return
-    const oldIndex = siblings.findIndex((p) => p.id === active.id)
-    const newIndex = siblings.findIndex((p) => p.id === over.id)
-    const reordered = arrayMove(siblings, oldIndex, newIndex)
-    // Update local state: replace only the affected siblings in the flat list
-    setPages((prev) => {
-      const updated = prev.map((p) => {
-        const idx = reordered.findIndex((r) => r.id === p.id)
-        if (idx !== -1) return { ...p, order: idx }
-        return p
-      })
-      return updated
-    })
-    await Promise.all(
-      reordered.map((p, i) =>
-        fetch(`/api/projects/${id}/pages/${p.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order: i }),
-        })
+
+    const tree = buildTree(pages.slice().sort((a, b) => a.order - b.order))
+    const flat = flattenTree(tree)
+    const projection = getProjection(flat, active.id as string, over.id as string, offsetLeftRef.current)
+    if (!projection) return
+
+    const activeIndex = flat.findIndex((i) => i.id === active.id)
+    const overIndex = flat.findIndex((i) => i.id === over.id)
+    const newFlat = arrayMove(flat, activeIndex, overIndex)
+
+    // Compute new sibling order within the new parent
+    const newSiblings = newFlat.filter(
+      (p) => p.id !== active.id && (p.parent_id ?? null) === (projection.parentId ?? null)
+    )
+    const insertIndex = newFlat.findIndex((p) => p.id === active.id)
+    const siblingsBeforeInsert = newFlat
+      .slice(0, insertIndex)
+      .filter((p) => p.id !== active.id && (p.parent_id ?? null) === (projection.parentId ?? null))
+    const newOrder = siblingsBeforeInsert.length
+
+    // Optimistic update
+    setPages((prev) =>
+      prev.map((p) =>
+        p.id === active.id
+          ? { ...p, parent_id: projection.parentId, order: newOrder }
+          : p
       )
     )
-    void parentId // suppress unused warning
+
+    await fetch(`/api/projects/${id}/pages/${active.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parent_id: projection.parentId, order: newOrder }),
+    })
+
+    // Re-order existing siblings if needed
+    const affectedSiblings = pages
+      .filter((p) => p.id !== active.id && (p.parent_id ?? null) === (projection.parentId ?? null))
+      .sort((a, b) => a.order - b.order)
+
+    const reordered = [
+      ...affectedSiblings.slice(0, newOrder),
+      { id: active.id as string },
+      ...affectedSiblings.slice(newOrder),
+    ]
+    await Promise.all(
+      reordered.map((p, i) =>
+        p.id !== active.id
+          ? fetch(`/api/projects/${id}/pages/${p.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ order: i }),
+            })
+          : Promise.resolve()
+      )
+    )
+
+    void newSiblings
   }
 
   async function handleDeletePage(page: Page) {
     await fetch(`/api/projects/${id}/pages/${page.id}`, { method: 'DELETE' })
-    // Remove page and all its descendants
     const toRemove = new Set<string>()
     function collectIds(p: Page) {
       toRemove.add(p.id)
@@ -146,6 +243,15 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   }
 
   const tree = buildTree(pages.slice().sort((a, b) => a.order - b.order))
+  const flatItems = flattenTree(tree)
+
+  // Compute projected position during drag
+  const projected =
+    activeId && overId
+      ? getProjection(flatItems, activeId, overId, offsetLeft)
+      : null
+
+  const activePage = pages.find((p) => p.id === activeId)
 
   return (
     <div className="min-h-screen bg-[#F0F2F5]">
@@ -201,7 +307,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           </div>
         </div>
 
-        {pages.length === 0 ? (
+        {flatItems.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
             <FileText size={36} className="mx-auto text-gray-300 mb-3" />
             <p className="text-gray-500 font-medium">Nog geen pagina&apos;s</p>
@@ -223,19 +329,45 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <PageTree
-              pages={tree}
-              allPages={pages}
-              projectId={id}
-              depth={0}
-              sensors={sensors}
-              onDragEnd={handleDragEnd}
-              onEdit={(p) => setEditingPage(p)}
-              onDelete={(p) => setDeletingPage(p)}
-              onAddChild={(p) => { setNewPageParent({ id: p.id, name: p.name }); setShowNewPage(true) }}
-            />
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={flatItems.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                {flatItems.map((page) => {
+                  const isActive = page.id === activeId
+                  const depth = (isActive && projected) ? projected.depth : page.depth
+                  return (
+                    <SortablePageRow
+                      key={page.id}
+                      page={page}
+                      projectId={id}
+                      depth={depth}
+                      isActive={isActive}
+                      onEdit={() => setEditingPage(page)}
+                      onDelete={() => setDeletingPage(page)}
+                      onAddChild={() => { setNewPageParent({ id: page.id, name: page.name }); setShowNewPage(true) }}
+                    />
+                  )
+                })}
+              </div>
+            </SortableContext>
+
+            <DragOverlay>
+              {activePage && (
+                <div className="bg-white border border-blue-300 shadow-lg rounded-xl flex items-center gap-3 px-4 py-3.5 opacity-95">
+                  <GripVertical size={14} className="text-gray-400" />
+                  <FileText size={14} className="text-blue-500" />
+                  <span className="font-medium text-sm text-gray-900">{activePage.name}</span>
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
         )}
       </main>
 
@@ -271,91 +403,45 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   )
 }
 
-// Recursive tree renderer
-function PageTree({
-  pages,
-  allPages,
-  projectId,
-  depth,
-  sensors,
-  onDragEnd,
-  onEdit,
-  onDelete,
-  onAddChild,
-}: {
-  pages: Page[]
-  allPages: Page[]
-  projectId: string
-  depth: number
-  sensors: ReturnType<typeof useSensors>
-  onDragEnd: (event: DragEndEvent, siblings: Page[], parentId: string | null) => void
-  onEdit: (p: Page) => void
-  onDelete: (p: Page) => void
-  onAddChild: (p: Page) => void
-}) {
-  const parentId = pages[0]?.parent_id ?? null
-
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={(e) => onDragEnd(e, pages, parentId)}
-    >
-      <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-        {pages.map((page) => (
-          <PageRow
-            key={page.id}
-            page={page}
-            allPages={allPages}
-            projectId={projectId}
-            depth={depth}
-            sensors={sensors}
-            onDragEnd={onDragEnd}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onAddChild={onAddChild}
-          />
-        ))}
-      </SortableContext>
-    </DndContext>
-  )
-}
-
-function PageRow({
+function SortablePageRow({
   page,
-  allPages,
   projectId,
   depth,
-  sensors,
-  onDragEnd,
+  isActive,
   onEdit,
   onDelete,
   onAddChild,
 }: {
-  page: Page
-  allPages: Page[]
+  page: FlatPage
   projectId: string
   depth: number
-  sensors: ReturnType<typeof useSensors>
-  onDragEnd: (event: DragEndEvent, siblings: Page[], parentId: string | null) => void
-  onEdit: (p: Page) => void
-  onDelete: (p: Page) => void
-  onAddChild: (p: Page) => void
+  isActive: boolean
+  onEdit: () => void
+  onDelete: () => void
+  onAddChild: () => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id })
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
-  const [expanded, setExpanded] = useState(true)
-  const children = page.children ?? []
-  const hasChildren = children.length > 0
-
-  const indentWidth = depth * 24
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: page.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
 
   return (
-    <div ref={setNodeRef} style={style}>
-      <div
-        className={`flex items-center group border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition-colors ${depth > 0 ? 'border-l-2 border-l-blue-100' : ''}`}
-        style={{ paddingLeft: indentWidth }}
-      >
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center border-b border-gray-50 last:border-b-0 group transition-colors ${
+        isActive ? 'opacity-30' : 'hover:bg-gray-50'
+      }`}
+    >
+      {/* Indent */}
+      {depth > 0 && (
+        <div
+          className="flex-shrink-0 border-l-2 border-blue-100 self-stretch"
+          style={{ marginLeft: depth * INDENT_WIDTH, width: 0 }}
+        />
+      )}
+      <div style={{ paddingLeft: depth * INDENT_WIDTH }} className="flex items-center flex-1 min-w-0">
         {/* Drag handle */}
         <div
           {...attributes}
@@ -363,18 +449,6 @@ function PageRow({
           className="px-3 py-3.5 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 transition-colors flex-shrink-0"
         >
           <GripVertical size={14} />
-        </div>
-
-        {/* Expand/collapse toggle */}
-        <div className="w-5 flex-shrink-0">
-          {hasChildren && (
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            </button>
-          )}
         </div>
 
         {/* Page link */}
@@ -387,32 +461,27 @@ function PageRow({
             <span className="font-medium text-sm text-gray-900 block truncate">{page.name}</span>
             <span className="text-xs text-gray-400">/{page.slug}</span>
           </div>
-          {hasChildren && (
-            <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full flex-shrink-0">
-              {children.length}
-            </span>
-          )}
           <span className="text-xs text-gray-400 ml-auto flex-shrink-0 pr-2">{formatDate(page.updated_at)}</span>
         </Link>
 
         {/* Actions */}
         <div className="flex items-center gap-0.5 pr-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           <button
-            onClick={(e) => { e.preventDefault(); onAddChild(page) }}
+            onClick={(e) => { e.preventDefault(); onAddChild() }}
             className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
             title="Subpagina toevoegen"
           >
             <Plus size={13} />
           </button>
           <button
-            onClick={(e) => { e.preventDefault(); onEdit(page) }}
+            onClick={(e) => { e.preventDefault(); onEdit() }}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
             title="Naam aanpassen"
           >
             <Pencil size={13} />
           </button>
           <button
-            onClick={(e) => { e.preventDefault(); onDelete(page) }}
+            onClick={(e) => { e.preventDefault(); onDelete() }}
             className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
             title="Verwijderen"
           >
@@ -420,21 +489,6 @@ function PageRow({
           </button>
         </div>
       </div>
-
-      {/* Children */}
-      {hasChildren && expanded && (
-        <PageTree
-          pages={children}
-          allPages={allPages}
-          projectId={projectId}
-          depth={depth + 1}
-          sensors={sensors}
-          onDragEnd={onDragEnd}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddChild={onAddChild}
-        />
-      )}
     </div>
   )
 }
@@ -518,7 +572,7 @@ function DeletePageModal({ page, hasChildren, onClose, onConfirm }: {
             <p className="font-medium text-red-700 text-sm">Pagina verwijderen?</p>
             <p className="text-red-600 text-sm mt-1">
               <strong>{page.name}</strong> en alle componenten worden permanent verwijderd.
-              {hasChildren && ' Alle subpagina\'s worden ook verwijderd.'}
+              {hasChildren && " Alle subpagina's worden ook verwijderd."}
             </p>
           </div>
         </div>
