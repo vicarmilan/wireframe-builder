@@ -92,7 +92,7 @@ export default function AdminUsersPage() {
       setInviteError(data.error || 'Er ging iets mis')
       return
     }
-    setInviteSuccess('invited')
+    setInviteSuccess(true)
     setInviteEmail('')
     fetch('/api/admin/users').then((r) => r.json()).then((d) => setUsers(Array.isArray(d) ? d : []))
     fetch('/api/admin/invitations').then((r) => r.json()).then((d) => setPendingInvitations(Array.isArray(d) ? d : []))
