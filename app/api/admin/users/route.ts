@@ -43,3 +43,17 @@ export async function PATCH(request: Request) {
 
   return NextResponse.json({ ok: true })
 }
+
+export async function DELETE(request: Request) {
+  const callerId = await requireAdmin()
+  if (!callerId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { userId } = await request.json()
+  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
+  if (userId === callerId) return NextResponse.json({ error: 'Je kan jezelf niet verwijderen.' }, { status: 400 })
+
+  const client = await clerkClient()
+  await client.users.deleteUser(userId)
+
+  return NextResponse.json({ ok: true })
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Shield, User, Search, UserPlus, Send, X, Mail, Clock } from 'lucide-react'
+import { ArrowLeft, Shield, User, Search, UserPlus, Send, X, Mail, Clock, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -117,6 +117,16 @@ export default function AdminUsersPage() {
     })
     setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role } : u))
     setUpdating(null)
+  }
+
+  async function deleteUser(userId: string) {
+    if (!confirm('Deze gebruiker permanent verwijderen?')) return
+    await fetch('/api/admin/users', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
+    setUsers((prev) => prev.filter((u) => u.id !== userId))
   }
 
   const filtered = users.filter((u) =>
@@ -244,7 +254,7 @@ export default function AdminUsersPage() {
               description="Hebben toegang tot het dashboard en kunnen projecten aanmaken en bewerken."
             >
               {admins.map((user) => (
-                <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} />
+                <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} onDelete={deleteUser} />
               ))}
               {admins.length === 0 && <EmptyRow label="Geen admins gevonden" />}
             </Section>
@@ -256,7 +266,7 @@ export default function AdminUsersPage() {
               description="Kunnen enkel preview links bekijken en feedback geven."
             >
               {clients.map((user) => (
-                <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} />
+                <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} onDelete={deleteUser} />
               ))}
               {clients.length === 0 && <EmptyRow label="Geen klanten gevonden" />}
             </Section>
@@ -316,10 +326,11 @@ function Section({ title, icon, count, description, children }: {
   )
 }
 
-function UserRow({ user, updating, onSetRole }: {
+function UserRow({ user, updating, onSetRole, onDelete }: {
   user: ClerkUser
   updating: boolean
   onSetRole: (id: string, role: 'admin' | 'client') => void
+  onDelete: (id: string) => void
 }) {
   return (
     <div className="flex items-center gap-4 px-5 py-3.5">
@@ -343,6 +354,13 @@ function UserRow({ user, updating, onSetRole }: {
           <option value="client">Klant</option>
           <option value="admin">Admin</option>
         </select>
+        <button
+          onClick={() => onDelete(user.id)}
+          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+          title="Verwijderen"
+        >
+          <Trash2 size={14} />
+        </button>
       </div>
     </div>
   )
