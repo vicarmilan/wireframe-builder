@@ -15,7 +15,6 @@ function RegisterForm() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [company, setCompany] = useState('')
-  const [email, setEmail] = useState<string | undefined>('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -23,9 +22,7 @@ function RegisterForm() {
   useEffect(() => {
     if (!isLoaded || !ticket || !signUp) return
     // Pre-fill email from ticket
-    signUp.create({ strategy: 'ticket', ticket }).then((res) => {
-      setEmail(res.emailAddress ?? undefined)
-    }).catch(() => {})
+    signUp.create({ strategy: 'ticket', ticket }).catch(() => {})
   }, [isLoaded, ticket, signUp])
 
   if (!ticket) {
@@ -109,15 +106,6 @@ function RegisterForm() {
           onChange={(e) => setCompany(e.target.value)}
           placeholder="Bedrijfsnaam"
           className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1.5">E-mailadres</label>
-        <input
-          value={email}
-          readOnly
-          className="w-full px-3 py-2.5 text-sm border border-gray-100 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
         />
       </div>
 
