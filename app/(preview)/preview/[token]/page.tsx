@@ -2,8 +2,8 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { MessageSquare, X, Send, Check, ArrowLeft } from 'lucide-react'
-import { useAuth } from '@clerk/nextjs'
+import { MessageSquare, X, Send, Check, ArrowLeft, Lock } from 'lucide-react'
+import { useAuth, useUser } from '@clerk/nextjs'
 import { Project, Page, PageComponent, Comment } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
 
@@ -14,20 +14,25 @@ interface FullProject extends Project {
 export default function PreviewPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
   const { isSignedIn } = useAuth()
+  const { user } = useUser()
   const [project, setProject] = useState<FullProject | null>(null)
   const [activePage, setActivePage] = useState<string | null>(null)
   const [commenting, setCommenting] = useState<string | null>(null)
   const [comments, setComments] = useState<Record<string, Comment[]>>({})
-  const [authorName, setAuthorName] = useState('')
-  const [authorEmail, setAuthorEmail] = useState('')
   const [commentText, setCommentText] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [forbidden, setForbidden] = useState(false)
+
+  const authorName = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.primaryEmailAddress?.emailAddress || '' : ''
+  const authorEmail = user?.primaryEmailAddress?.emailAddress || ''
 
   useEffect(() => {
     fetch(`/api/preview/${token}`)
       .then((r) => {
+        if (r.status === 403) { setForbidden(true); setLoading(false); return null }
+        if (r.status === 401) { setForbidden(true); setLoading(false); return null }
         if (!r.ok) { setNotFound(true); setLoading(false); return null }
         return r.json()
       })
@@ -42,7 +47,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
   const currentPage = project?.pages.find((p) => p.id === activePage)
 
   async function submitComment(componentId: string) {
-    if (!commentText.trim() || !authorName.trim() || !authorEmail.trim()) return
+    if (!commentText.trim() || !authorName || !authorEmail) return
 
     const res = await fetch('/api/comments', {
       method: 'POST',
@@ -67,6 +72,27 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
     </div>
   )
 
+  if (forbidden) return (
+    <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
+      <div className="text-center space-y-3">
+        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+          <Lock size={20} className="text-gray-400" />
+        </div>
+        <h1 className="text-xl font-semibold text-gray-900">Geen toegang</h1>
+        <p className="text-gray-500 text-sm max-w-xs">
+          {isSignedIn
+            ? 'Je bent niet uitgenodigd voor dit project. Vraag de Vicar beheerder om toegang.'
+            : 'Log in om deze preview te bekijken.'}
+        </p>
+        {!isSignedIn && (
+          <Link href="/login" className="inline-block mt-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+            Inloggen
+          </Link>
+        )}
+      </div>
+    </div>
+  )
+
   if (notFound) return (
     <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
       <div className="text-center">
@@ -82,11 +108,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
       <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           {isSignedIn && (
-            <Link
-              href="/dashboard"
-              className="text-gray-400 hover:text-gray-600 transition-colors mr-1"
-              title="Terug naar dashboard"
-            >
+            <Link href="/dashboard" className="text-gray-400 hover:text-gray-600 transition-colors mr-1" title="Terug naar dashboard">
               <ArrowLeft size={18} />
             </Link>
           )}
@@ -154,9 +176,14 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
           </div>
         )}
 
-        <div className="text-xs text-gray-400 flex items-center gap-1">
-          <MessageSquare size={12} />
-          Klik op een sectie om feedback te geven
+        <div className="flex items-center gap-3">
+          {user && (
+            <span className="text-xs text-gray-400">{authorName}</span>
+          )}
+          <div className="text-xs text-gray-400 flex items-center gap-1">
+            <MessageSquare size={12} />
+            Klik op een sectie om feedback te geven
+          </div>
         </div>
       </header>
 
@@ -181,7 +208,12 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
             {commenting === component.id && (
               <div className="mt-2 bg-white rounded-xl border border-gray-100 shadow-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm text-gray-900">Feedback geven</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-sm text-gray-900">Feedback geven</h4>
+                    {user && (
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{authorName}</span>
+                    )}
+                  </div>
                   <button onClick={() => setCommenting(null)} className="text-gray-400 hover:text-gray-600">
                     <X size={14} />
                   </button>
@@ -210,39 +242,22 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
                     Feedback verzonden!
                   </div>
                 ) : (
-                  <>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        value={authorName}
-                        onChange={(e) => setAuthorName(e.target.value)}
-                        placeholder="Jouw naam"
-                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        value={authorEmail}
-                        onChange={(e) => setAuthorEmail(e.target.value)}
-                        placeholder="Email"
-                        type="email"
-                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <textarea
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        placeholder="Jouw feedback op deze sectie..."
-                        rows={2}
-                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                      />
-                      <button
-                        onClick={() => submitComment(component.id)}
-                        disabled={!commentText.trim() || !authorName.trim() || !authorEmail.trim()}
-                        className="self-end bg-[#2563EB] text-white p-2.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40"
-                      >
-                        <Send size={14} />
-                      </button>
-                    </div>
-                  </>
+                  <div className="flex gap-2">
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Jouw feedback op deze sectie..."
+                      rows={2}
+                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    />
+                    <button
+                      onClick={() => submitComment(component.id)}
+                      disabled={!commentText.trim()}
+                      className="self-end bg-[#2563EB] text-white p-2.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40"
+                    >
+                      <Send size={14} />
+                    </button>
+                  </div>
                 )}
               </div>
             )}

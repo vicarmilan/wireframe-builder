@@ -3,7 +3,7 @@
 import { useState, useEffect, use, useRef } from 'react'
 import {
   ArrowLeft, Plus, FileText, ExternalLink, Copy, Check, Code2,
-  GripVertical, Pencil, Trash2, X, AlertTriangle,
+  GripVertical, Pencil, Trash2, X, AlertTriangle, Users, UserPlus, UserMinus,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Project, Page } from '@/types'
@@ -103,6 +103,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [copied, setCopied] = useState(false)
   const [editingPage, setEditingPage] = useState<Page | null>(null)
   const [deletingPage, setDeletingPage] = useState<Page | null>(null)
+  const [showMembers, setShowMembers] = useState(false)
 
   // DnD state
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -262,6 +263,13 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowMembers(true)}
+            className="flex items-center gap-2 border border-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+          >
+            <Users size={14} />
+            Toegang
+          </button>
+          <button
             onClick={copyPreviewLink}
             className="flex items-center gap-2 border border-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors"
           >
@@ -393,6 +401,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           onClose={() => setDeletingPage(null)}
           onConfirm={() => handleDeletePage(deletingPage)}
         />
+      )}
+      {showMembers && (
+        <MembersModal projectId={id} onClose={() => setShowMembers(false)} />
       )}
     </div>
   )
@@ -581,6 +592,162 @@ function DeletePageModal({ page, hasChildren, onClose, onConfirm }: {
             className="flex-1 bg-red-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50"
           >
             {deleting ? 'Verwijderen...' : 'Verwijderen'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface Member {
+  id: string
+  user_id: string
+  email: string
+  name: string | null
+  imageUrl: string
+}
+
+interface ClerkUser {
+  id: string
+  email: string
+  name: string | null
+  imageUrl: string
+  role: string
+}
+
+function MembersModal({ projectId, onClose }: { projectId: string; onClose: () => void }) {
+  const [members, setMembers] = useState<Member[]>([])
+  const [allUsers, setAllUsers] = useState<ClerkUser[]>([])
+  const [loading, setLoading] = useState(true)
+  const [adding, setAdding] = useState(false)
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/projects/${projectId}/members`).then((r) => r.json()),
+      fetch('/api/admin/users').then((r) => r.json()),
+    ]).then(([m, u]) => {
+      setMembers(Array.isArray(m) ? m : [])
+      setAllUsers(Array.isArray(u) ? u.filter((user: ClerkUser) => user.role !== 'admin') : [])
+      setLoading(false)
+    })
+  }, [projectId])
+
+  async function addMember(userId: string) {
+    setAdding(true)
+    const res = await fetch(`/api/projects/${projectId}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId }),
+    })
+    if (res.ok) {
+      const user = allUsers.find((u) => u.id === userId)
+      if (user) setMembers((prev) => [...prev, { id: Date.now().toString(), user_id: userId, email: user.email, name: user.name, imageUrl: user.imageUrl }])
+    }
+    setAdding(false)
+    setSearch('')
+  }
+
+  async function removeMember(userId: string) {
+    await fetch(`/api/projects/${projectId}/members`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId }),
+    })
+    setMembers((prev) => prev.filter((m) => m.user_id !== userId))
+  }
+
+  const memberIds = new Set(members.map((m) => m.user_id))
+  const suggestions = allUsers.filter(
+    (u) => !memberIds.has(u.id) &&
+    (u.name?.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
+  )
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh]">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Users size={16} className="text-[#2563EB]" />
+            <h2 className="font-semibold text-gray-900">Preview toegang</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {/* Add member */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Gebruiker uitnodigen</label>
+            <div className="relative">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Zoek op naam of e-mail..."
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {search && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-lg z-10 py-1 max-h-48 overflow-y-auto">
+                  {suggestions.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => addMember(u.id)}
+                      disabled={adding}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <UserPlus size={14} className="text-gray-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">{u.name || u.email}</div>
+                        {u.name && <div className="text-xs text-gray-400 truncate">{u.email}</div>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {search && suggestions.length === 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-lg z-10 px-3 py-3 text-sm text-gray-400">
+                  Geen gebruikers gevonden
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Current members */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              Heeft toegang <span className="text-gray-400 font-normal">({members.length})</span>
+            </p>
+            {loading ? (
+              <div className="space-y-2">{[...Array(2)].map((_, i) => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)}</div>
+            ) : members.length === 0 ? (
+              <p className="text-sm text-gray-400 py-3">Nog niemand uitgenodigd.</p>
+            ) : (
+              <div className="space-y-1">
+                {members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 group">
+                    <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold flex-shrink-0">
+                      {(m.name || m.email)[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">{m.name || m.email}</div>
+                      {m.name && <div className="text-xs text-gray-400 truncate">{m.email}</div>}
+                    </div>
+                    <button
+                      onClick={() => removeMember(m.user_id)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
+                      title="Toegang verwijderen"
+                    >
+                      <UserMinus size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-5 border-t border-gray-100 flex-shrink-0">
+          <button onClick={onClose} className="w-full border border-gray-200 text-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+            Sluiten
           </button>
         </div>
       </div>
