@@ -27,14 +27,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ pag
   const body = await request.json()
   const supabase = createServiceClient()
 
-  const { data: existing } = await supabase
-    .from('page_components')
-    .select('order')
-    .eq('page_id', pageId)
-    .order('order', { ascending: false })
-    .limit(1)
-
-  const nextOrder = existing && existing.length > 0 ? existing[0].order + 1 : 0
+  let insertOrder: number
+  if (body.order !== undefined) {
+    insertOrder = body.order
+  } else {
+    const { data: existing } = await supabase
+      .from('page_components')
+      .select('order')
+      .eq('page_id', pageId)
+      .order('order', { ascending: false })
+      .limit(1)
+    insertOrder = existing && existing.length > 0 ? existing[0].order + 1 : 0
+  }
 
   const { data, error } = await supabase
     .from('page_components')
@@ -42,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pag
       page_id: pageId,
       component_type: body.component_type,
       component_variant: body.component_variant,
-      order: nextOrder,
+      order: insertOrder,
       props: body.props || {},
     })
     .select()

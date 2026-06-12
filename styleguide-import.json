@@ -1,0 +1,264 @@
+{
+  "pages": [
+    {
+      "name": "Styleguide",
+      "slug": "styleguide",
+      "components": [
+        {
+          "type": "navigation",
+          "variant": "default",
+          "props": {
+            "logo": "Bedrijfsnaam",
+            "cta": "Aan de slag"
+          }
+        },
+        {
+          "type": "navigation",
+          "variant": "centered",
+          "props": {
+            "logo": "Bedrijfsnaam"
+          }
+        },
+        {
+          "type": "navigation",
+          "variant": "mega",
+          "props": {
+            "logo": "Bedrijfsnaam",
+            "cta": "Gratis proberen"
+          }
+        },
+        {
+          "type": "hero",
+          "variant": "centered",
+          "props": {
+            "eyebrow": "Nieuw in 2025",
+            "title": "De beste oplossing voor jouw bedrijf",
+            "subtitle": "Beschrijf hier kort wat je doet en welke waarde je biedt aan je klanten.",
+            "cta_primary": "Aan de slag",
+            "cta_secondary": "Meer info"
+          }
+        },
+        {
+          "type": "hero",
+          "variant": "split",
+          "props": {
+            "title": "Wij bouwen websites die converteren",
+            "subtitle": "Een sterke online aanwezigheid begint met een goed ontwerp en slimme strategie.",
+            "cta_primary": "Neem contact op",
+            "cta_secondary": "Ons werk bekijken"
+          }
+        },
+        {
+          "type": "hero",
+          "variant": "video",
+          "props": {
+            "title": "Verander de manier waarop je werkt",
+            "cta_primary": "Bekijk de video"
+          }
+        },
+        {
+          "type": "hero",
+          "variant": "minimal",
+          "props": {
+            "title": "Wij maken geweldige websites",
+            "cta_primary": "Ontdek meer"
+          }
+        },
+        {
+          "type": "stats",
+          "variant": "default",
+          "props": {
+            "s1_num": "10.000+",
+            "s1_label": "Tevreden klanten",
+            "s2_num": "99%",
+            "s2_label": "Klanttevredenheid",
+            "s3_num": "50+",
+            "s3_label": "Landen actief",
+            "s4_num": "24/7",
+            "s4_label": "Support beschikbaar"
+          }
+        },
+        {
+          "type": "features",
+          "variant": "grid-3",
+          "props": {
+            "title": "Waarom kiezen voor ons?",
+            "f1_title": "Snel & betrouwbaar",
+            "f1_desc": "Onze infrastructuur is gebouwd voor snelheid. Laadtijden onder de 1 seconde, altijd.",
+            "f2_title": "Eenvoudig te gebruiken",
+            "f2_desc": "Geen technische kennis nodig. Iedereen kan ermee werken vanaf dag één.",
+            "f3_title": "Altijd beschikbaar",
+            "f3_desc": "99,9% uptime gegarandeerd met 24/7 monitoring en automatische backups."
+          }
+        },
+        {
+          "type": "features",
+          "variant": "list-split",
+          "props": {
+            "title": "Alles wat je nodig hebt",
+            "subtitle": "Wij bieden een complete oplossing voor jouw online aanwezigheid, van design tot lancering."
+          }
+        },
+        {
+          "type": "features",
+          "variant": "alternating",
+          "props": {
+            "title": "Hoe het werkt",
+            "f1_title": "Stap 1: Briefing",
+            "f1_desc": "We leren jouw bedrijf kennen. In een kort gesprek bespreken we je doelen, doelgroep en verwachtingen.",
+            "f2_title": "Stap 2: Design & Bouw",
+            "f2_desc": "Ons team gaat aan de slag. Je krijgt een wireframe te zien voor de bouw begint zodat je vroeg kan bijsturen."
+          }
+        },
+        {
+          "type": "testimonials",
+          "variant": "grid-3",
+          "props": {
+            "title": "Wat onze klanten zeggen",
+            "t1_text": "Fantastische samenwerking. Het team luistert goed en levert altijd meer dan verwacht.",
+            "t1_name": "Jan Janssen",
+            "t1_role": "CEO, Janssen & Co",
+            "t2_text": "Onze omzet steeg met 40% na de nieuwe website. Absolute aanrader voor elk bedrijf.",
+            "t2_name": "Marie Pieters",
+            "t2_role": "Marketing Manager, TechStart",
+            "t3_text": "Professioneel, snel en betaalbaar. Ze leverden exact wat beloofd werd, op tijd.",
+            "t3_name": "Tom Claes",
+            "t3_role": "Zaakvoerder, Claes Bouw"
+          }
+        },
+        {
+          "type": "testimonials",
+          "variant": "featured",
+          "props": {
+            "quote": "Dit is verreweg de beste investering die we hebben gedaan voor ons bedrijf. De resultaten spreken voor zich.",
+            "name": "Sofie Vermeersch",
+            "role": "Founder, Studio Bloom"
+          }
+        },
+        {
+          "type": "pricing",
+          "variant": "default",
+          "props": {
+            "title": "Eenvoudige prijzen",
+            "p1_name": "Starter",
+            "p1_price": "€29/maand",
+            "p1_cta": "Gratis starten",
+            "p2_name": "Pro",
+            "p2_price": "€79/maand",
+            "p2_cta": "Probeer 14 dagen gratis",
+            "p3_name": "Enterprise",
+            "p3_price": "Op aanvraag",
+            "p3_cta": "Contact opnemen"
+          }
+        },
+        {
+          "type": "portfolio",
+          "variant": "default",
+          "props": {
+            "title": "Ons werk",
+            "p1_title": "Redesign webshop Modehaus",
+            "p1_cat": "Webdesign",
+            "p2_title": "Huisstijl voor techstartup",
+            "p2_cat": "Branding",
+            "p3_title": "Maatwerk platform bouw",
+            "p3_cat": "Development"
+          }
+        },
+        {
+          "type": "team",
+          "variant": "default",
+          "props": {
+            "title": "Ons team",
+            "m1_name": "Milan Vermeersch",
+            "m1_role": "CEO & Founder",
+            "m2_name": "Laura De Wolf",
+            "m2_role": "Lead Designer",
+            "m3_name": "Niels Baert",
+            "m3_role": "Full Stack Developer"
+          }
+        },
+        {
+          "type": "blog",
+          "variant": "default",
+          "props": {
+            "title": "Laatste artikelen",
+            "a1_title": "Hoe je een website bouwt die écht converteert",
+            "a1_date": "12 juni 2025",
+            "a2_title": "5 UX-fouten die klanten wegjagen",
+            "a2_date": "5 juni 2025",
+            "a3_title": "Webdesign trends die je moet kennen in 2025",
+            "a3_date": "1 juni 2025"
+          }
+        },
+        {
+          "type": "faq",
+          "variant": "default",
+          "props": {
+            "title": "Veelgestelde vragen",
+            "q1": "Hoe werkt het onboardingproces?",
+            "a1": "Na je aanmelding plannen we een kick-off gesprek in. Daarna ontvang je een gedetailleerde tijdlijn en beginnen we met het eerste ontwerp.",
+            "q2": "Wat zijn de totale kosten?",
+            "a2": "De kosten zijn afhankelijk van het type project en de gewenste functionaliteiten. We bezorgen je altijd eerst een vrijblijvende offerte.",
+            "q3": "Kan ik het platform eerst proberen?",
+            "a3": "Ja, je kan 14 dagen volledig gratis en zonder kredietkaart uitproberen."
+          }
+        },
+        {
+          "type": "contact",
+          "variant": "split",
+          "props": {
+            "title": "Neem contact op",
+            "subtitle": "Heb je een vraag of wil je samenwerken? Stuur ons een bericht en we antwoorden binnen 24 uur.",
+            "email": "hallo@bedrijfsnaam.be",
+            "phone": "+32 478 00 00 00",
+            "address": "Gent, België",
+            "cta": "Bericht sturen"
+          }
+        },
+        {
+          "type": "contact",
+          "variant": "centered",
+          "props": {
+            "title": "Stuur een bericht",
+            "cta": "Versturen"
+          }
+        },
+        {
+          "type": "cta",
+          "variant": "banner",
+          "props": {
+            "title": "Klaar om te starten?",
+            "cta": "Contacteer ons"
+          }
+        },
+        {
+          "type": "cta",
+          "variant": "centered",
+          "props": {
+            "title": "Klaar om te beginnen?",
+            "subtitle": "Start vandaag gratis. Geen kredietkaart nodig.",
+            "cta_primary": "Gratis proberen",
+            "cta_secondary": "Meer info"
+          }
+        },
+        {
+          "type": "footer",
+          "variant": "multi-column",
+          "props": {
+            "logo": "Bedrijfsnaam",
+            "tagline": "Wij bouwen websites die werken voor jou. Van design tot lancering, alles onder één dak.",
+            "copyright": "© 2025 Bedrijfsnaam. Alle rechten voorbehouden."
+          }
+        },
+        {
+          "type": "footer",
+          "variant": "simple",
+          "props": {
+            "logo": "Bedrijfsnaam",
+            "copyright": "© 2025 Bedrijfsnaam. Alle rechten voorbehouden."
+          }
+        }
+      ]
+    }
+  ]
+}

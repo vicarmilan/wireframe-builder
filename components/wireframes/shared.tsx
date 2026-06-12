@@ -60,6 +60,7 @@ export function Tx({
           className={`bg-transparent border border-blue-300 rounded px-1 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-gray-400 w-full ${className}`}
           rows={3}
           onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
         />
       )
     }
@@ -68,39 +69,49 @@ export function Tx({
         value={value ?? ''}
         onChange={(e) => onPropChange(fieldKey, e.target.value)}
         placeholder={placeholder}
-        className={`bg-transparent border border-blue-300 rounded px-1 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-gray-400 min-w-0 ${className}`}
+        className={`bg-transparent border border-blue-300 rounded px-1 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-gray-400 min-w-0 w-full ${className}`}
         onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       />
     )
   }
-  if (value) return <span className={className}>{value}</span>
+  if (value) return <div className={className}>{value}</div>
   return <Ph w={barWidth} />
 }
 
 // Blue button placeholder
-export function BtnPh({ text, className = '', editing, fieldKey, onPropChange }: {
+export function BtnPh({ text, className = '', editing, fieldKey, onPropChange, light = false }: {
   text?: string
   className?: string
   editing?: boolean
   fieldKey?: string
   onPropChange?: (k: string, v: string) => void
+  light?: boolean
 }) {
+  const bg = light ? 'bg-white' : 'bg-[#2563EB]'
+  const fg = light ? 'text-[#2563EB]' : 'text-white'
+  const phClass = light ? 'bg-[#2563EB]/30' : 'bg-white/50'
   if (editing && fieldKey && onPropChange) {
     return (
-      <div className={`inline-flex items-center justify-center bg-[#2563EB] text-white text-xs font-medium px-4 py-2 rounded ${className}`}>
+      <div
+        className={`inline-flex items-center justify-center ${bg} ${fg} text-xs font-medium px-4 py-2 rounded ${className}`}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <input
           value={text ?? ''}
           onChange={(e) => onPropChange(fieldKey, e.target.value)}
           placeholder="Knoptekst"
-          className="bg-transparent text-white placeholder:text-white/60 focus:outline-none text-center w-24 min-w-0"
-          onClick={(e) => e.stopPropagation()}
+          className={`bg-transparent ${fg} placeholder:opacity-60 focus:outline-none text-center min-w-0`}
+          style={{ width: Math.max(64, (text?.length ?? 8) * 8) }}
+          autoFocus={false}
         />
       </div>
     )
   }
   return (
-    <div className={`inline-flex items-center justify-center bg-[#2563EB] text-white text-xs font-medium px-4 py-2 rounded ${className}`}>
-      {text || <Ph w="w-16" h="h-3" className="bg-white/50" />}
+    <div className={`inline-flex items-center justify-center ${bg} ${fg} text-xs font-medium px-4 py-2 rounded ${className}`}>
+      {text || <Ph w="w-16" h="h-3" className={phClass} />}
     </div>
   )
 }
@@ -115,13 +126,17 @@ export function BtnOutlinePh({ text, className = '', editing, fieldKey, onPropCh
 }) {
   if (editing && fieldKey && onPropChange) {
     return (
-      <div className={`inline-flex items-center justify-center border border-[#C8CFD8] text-gray-500 text-xs font-medium px-4 py-2 rounded ${className}`}>
+      <div
+        className={`inline-flex items-center justify-center border border-[#C8CFD8] text-gray-500 text-xs font-medium px-4 py-2 rounded ${className}`}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <input
           value={text ?? ''}
           onChange={(e) => onPropChange(fieldKey, e.target.value)}
           placeholder="Knoptekst"
-          className="bg-transparent text-gray-500 placeholder:text-gray-400 focus:outline-none text-center w-24 min-w-0"
-          onClick={(e) => e.stopPropagation()}
+          className="bg-transparent text-gray-500 placeholder:text-gray-400 focus:outline-none text-center min-w-0"
+          style={{ width: Math.max(64, (text?.length ?? 8) * 8) }}
         />
       </div>
     )
@@ -135,7 +150,7 @@ export function BtnOutlinePh({ text, className = '', editing, fieldKey, onPropCh
 
 // Logo placeholder
 export function LogoPh({ text }: { text?: string }) {
-  if (text) return <span className="font-bold text-gray-800 text-sm">{text}</span>
+  if (text) return <div className="font-bold text-gray-800 text-sm">{text}</div>
   return (
     <div className="flex items-center gap-2">
       <div className="w-6 h-6 bg-[#2563EB] rounded" />

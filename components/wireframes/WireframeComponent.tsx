@@ -12,6 +12,9 @@ import BlogWireframe from './BlogWireframe'
 import FaqWireframe from './FaqWireframe'
 import ContactWireframe from './ContactWireframe'
 import FooterWireframe from './FooterWireframe'
+import RestaurantWireframe from './RestaurantWireframe'
+import HotelWireframe from './HotelWireframe'
+import MarketplaceWireframe from './MarketplaceWireframe'
 
 interface Props {
   component: PageComponent
@@ -39,6 +42,9 @@ export default function WireframeComponent({ component, editing, onPropChange }:
     case 'faq': return <FaqWireframe {...commonProps} />
     case 'contact': return <ContactWireframe {...commonProps} />
     case 'footer': return <FooterWireframe {...commonProps} />
+    case 'restaurant': return <RestaurantWireframe {...commonProps} />
+    case 'hotel': return <HotelWireframe {...commonProps} />
+    case 'marketplace': return <MarketplaceWireframe {...commonProps} />
     default: return (
       <div className="bg-white px-8 py-6 text-sm text-gray-400 text-center">
         Onbekend component: {component.component_type}/{v}

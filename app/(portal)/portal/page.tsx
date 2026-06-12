@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useUser, UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { ExternalLink, Layout, Clock } from 'lucide-react'
+import { Layout, Clock } from 'lucide-react'
 import { Project } from '@/types'
 
 interface PortalData {
@@ -81,18 +81,12 @@ export default function PortalPage() {
 
 function ProjectCard({ project }: { project: Project }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-          <Layout size={18} className="text-[#2563EB]" />
-        </div>
-        <Link
-          href={`/preview/${project.preview_token}`}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-[#2563EB] transition-colors"
-        >
-          <ExternalLink size={13} />
-          Preview bekijken
-        </Link>
+    <Link
+      href={`/preview/${project.preview_token}`}
+      className="block bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md hover:border-blue-100 transition-all"
+    >
+      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
+        <Layout size={18} className="text-[#2563EB]" />
       </div>
       <h3 className="font-semibold text-gray-900 mb-0.5">{project.name}</h3>
       <p className="text-xs text-gray-400">{project.client_name}</p>
@@ -100,7 +94,7 @@ function ProjectCard({ project }: { project: Project }) {
         <Clock size={11} />
         {new Date(project.updated_at).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' })}
       </div>
-    </div>
+    </Link>
   )
 }
 

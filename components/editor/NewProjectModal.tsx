@@ -1,8 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { Project } from '@/types'
+
+interface Client {
+  id: string
+  name: string
+}
 
 interface Props {
   onClose: () => void
@@ -11,20 +16,27 @@ interface Props {
 
 export default function NewProjectModal({ onClose, onCreated }: Props) {
   const [name, setName] = useState('')
-  const [clientName, setClientName] = useState('')
+  const [clientId, setClientId] = useState('')
+  const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    fetch('/api/admin/clients')
+      .then((r) => r.json())
+      .then((data) => setClients(Array.isArray(data) ? data : []))
+  }, [])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || !clientName.trim()) return
+    if (!name.trim() || !clientId) return
     setLoading(true)
     setError('')
 
     const res = await fetch('/api/projects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), client_name: clientName.trim() }),
+      body: JSON.stringify({ name: name.trim(), client_id: clientId }),
     })
 
     const data = await res.json()
@@ -59,13 +71,22 @@ export default function NewProjectModal({ onClose, onCreated }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Klantnaam</label>
-            <input
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              placeholder="bijv. ACME Corp"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Klant</label>
+            <select
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Selecteer een klant...</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            {clients.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                Nog geen bedrijven. <a href="/admin/clients" className="text-blue-500 hover:underline">Voeg er eerst een toe.</a>
+              </p>
+            )}
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -80,7 +101,7 @@ export default function NewProjectModal({ onClose, onCreated }: Props) {
             </button>
             <button
               type="submit"
-              disabled={loading || !name.trim() || !clientName.trim()}
+              disabled={loading || !name.trim() || !clientId}
               className="flex-1 bg-[#2563EB] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Aanmaken...' : 'Aanmaken'}

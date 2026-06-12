@@ -30,8 +30,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const allowed: Record<string, unknown> = {}
   if (body.name !== undefined) allowed.name = body.name
-  if (body.client_name !== undefined) allowed.client_name = body.client_name
   if (body.logo_url !== undefined) allowed.logo_url = body.logo_url
+  if (body.client_access !== undefined) allowed.client_access = body.client_access
+
+  // client_id drives client_name — fetch name from clients table when set
+  if (body.client_id !== undefined) {
+    allowed.client_id = body.client_id || null
+    if (body.client_id) {
+      const { data: clientRecord } = await supabase
+        .from('clients')
+        .select('name')
+        .eq('id', body.client_id)
+        .single()
+      if (clientRecord) allowed.client_name = clientRecord.name
+    } else {
+      // Explicitly clearing client
+      allowed.client_name = body.client_name ?? null
+    }
+  } else if (body.client_name !== undefined) {
+    allowed.client_name = body.client_name
+  }
 
   const { data, error } = await supabase
     .from('projects')

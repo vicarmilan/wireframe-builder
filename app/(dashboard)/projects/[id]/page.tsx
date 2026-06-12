@@ -605,6 +605,8 @@ interface Member {
   email: string
   name: string | null
   imageUrl: string
+  via?: 'direct' | 'client'
+  clientName?: string
 }
 
 interface ClerkUser {
@@ -617,6 +619,10 @@ interface ClerkUser {
 
 function MembersModal({ projectId, onClose }: { projectId: string; onClose: () => void }) {
   const [members, setMembers] = useState<Member[]>([])
+  const [clientMembers, setClientMembers] = useState<Member[]>([])
+  const [linkedClient, setLinkedClient] = useState<{ id: string; name: string } | null>(null)
+  const [clientAccess, setClientAccess] = useState(true)
+  const [togglingAccess, setTogglingAccess] = useState(false)
   const [allUsers, setAllUsers] = useState<ClerkUser[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
@@ -624,14 +630,29 @@ function MembersModal({ projectId, onClose }: { projectId: string; onClose: () =
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/projects/${projectId}/members`).then((r) => r.json()),
-      fetch('/api/admin/users').then((r) => r.json()),
+      fetch(`/api/projects/${projectId}/members`).then((r) => r.ok ? r.json() : { members: [], clientMembers: [], client: null, clientAccess: true }),
+      fetch('/api/admin/users').then((r) => r.ok ? r.json() : []),
     ]).then(([m, u]) => {
-      setMembers(Array.isArray(m) ? m : [])
+      setMembers(Array.isArray(m?.members) ? m.members : [])
+      setClientMembers(Array.isArray(m?.clientMembers) ? m.clientMembers : [])
+      setLinkedClient(m?.client ?? null)
+      setClientAccess(m?.clientAccess ?? true)
       setAllUsers(Array.isArray(u) ? u.filter((user: ClerkUser) => user.role !== 'admin') : [])
       setLoading(false)
-    })
+    }).catch(() => setLoading(false))
   }, [projectId])
+
+  async function toggleClientAccess() {
+    setTogglingAccess(true)
+    const next = !clientAccess
+    await fetch(`/api/projects/${projectId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_access: next }),
+    })
+    setClientAccess(next)
+    setTogglingAccess(false)
+  }
 
   async function addMember(userId: string) {
     setAdding(true)
@@ -642,7 +663,7 @@ function MembersModal({ projectId, onClose }: { projectId: string; onClose: () =
     })
     if (res.ok) {
       const user = allUsers.find((u) => u.id === userId)
-      if (user) setMembers((prev) => [...prev, { id: Date.now().toString(), user_id: userId, email: user.email, name: user.name, imageUrl: user.imageUrl }])
+      if (user) setMembers((prev) => [...prev, { id: Date.now().toString(), user_id: userId, email: user.email, name: user.name, imageUrl: user.imageUrl, via: 'direct' }])
     }
     setAdding(false)
     setSearch('')
@@ -657,9 +678,9 @@ function MembersModal({ projectId, onClose }: { projectId: string; onClose: () =
     setMembers((prev) => prev.filter((m) => m.user_id !== userId))
   }
 
-  const memberIds = new Set(members.map((m) => m.user_id))
+  const allAccessIds = new Set([...members.map((m) => m.user_id), ...clientMembers.map((m) => m.user_id)])
   const suggestions = allUsers.filter(
-    (u) => !memberIds.has(u.id) &&
+    (u) => !allAccessIds.has(u.id) &&
     (u.name?.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
   )
 
@@ -677,7 +698,7 @@ function MembersModal({ projectId, onClose }: { projectId: string; onClose: () =
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Add member */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Gebruiker uitnodigen</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Gebruiker toevoegen</label>
             <div className="relative">
               <input
                 value={search}
@@ -711,38 +732,80 @@ function MembersModal({ projectId, onClose }: { projectId: string; onClose: () =
             </div>
           </div>
 
-          {/* Current members */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">
-              Heeft toegang <span className="text-gray-400 font-normal">({members.length})</span>
-            </p>
-            {loading ? (
-              <div className="space-y-2">{[...Array(2)].map((_, i) => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)}</div>
-            ) : members.length === 0 ? (
-              <p className="text-sm text-gray-400 py-3">Nog niemand uitgenodigd.</p>
-            ) : (
-              <div className="space-y-1">
-                {members.map((m) => (
-                  <div key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 group">
-                    <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold flex-shrink-0">
-                      {(m.name || m.email)[0].toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">{m.name || m.email}</div>
-                      {m.name && <div className="text-xs text-gray-400 truncate">{m.email}</div>}
+          {loading ? (
+            <div className="space-y-2">{[...Array(2)].map((_, i) => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)}</div>
+          ) : (
+            <>
+              {/* Company access toggle */}
+              {linkedClient && (
+                <div className="border border-gray-100 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{linkedClient.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {clientAccess
+                          ? `${clientMembers.length} gebruiker${clientMembers.length !== 1 ? 's' : ''} heeft automatisch toegang`
+                          : 'Bedrijf heeft geen toegang tot deze preview'}
+                      </p>
                     </div>
                     <button
-                      onClick={() => removeMember(m.user_id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
-                      title="Toegang verwijderen"
+                      onClick={toggleClientAccess}
+                      disabled={togglingAccess}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 focus:outline-none disabled:opacity-50 ${clientAccess ? 'bg-[#2563EB]' : 'bg-gray-200'}`}
                     >
-                      <UserMinus size={14} />
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${clientAccess ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </div>
-                ))}
+
+                  {clientAccess && clientMembers.length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      {clientMembers.map((m) => (
+                        <div key={m.user_id} className="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-gray-50">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold flex-shrink-0">
+                            {(m.name || m.email || '?')[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-gray-900 truncate">{m.name || m.email || 'Onbekende gebruiker'}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Explicit members */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Individueel uitgenodigd <span className="text-gray-400 font-normal">({members.length})</span>
+                </p>
+                {members.length === 0 ? (
+                  <p className="text-sm text-gray-400 py-2">Nog niemand individueel uitgenodigd.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {members.map((m) => (
+                      <div key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 group">
+                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold flex-shrink-0">
+                          {(m.name || m.email || '?')[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">{m.name || m.email || 'Onbekende gebruiker'}</div>
+                          {m.name && m.email && <div className="text-xs text-gray-400 truncate">{m.email}</div>}
+                        </div>
+                        <button
+                          onClick={() => removeMember(m.user_id)}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
+                          title="Toegang verwijderen"
+                        >
+                          <UserMinus size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         <div className="p-5 border-t border-gray-100 flex-shrink-0">

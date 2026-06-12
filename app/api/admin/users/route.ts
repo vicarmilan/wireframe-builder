@@ -22,6 +22,8 @@ export async function GET() {
       id: u.id,
       email: u.emailAddresses[0]?.emailAddress ?? '',
       name: [u.firstName, u.lastName].filter(Boolean).join(' ') || null,
+      firstName: u.firstName ?? '',
+      lastName: u.lastName ?? '',
       imageUrl: u.imageUrl,
       role: (u.publicMetadata as Record<string, string>)?.role ?? 'client',
       createdAt: u.createdAt,
@@ -33,13 +35,36 @@ export async function GET() {
 export async function PATCH(request: Request) {
   if (!await requireAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { userId, role } = await request.json()
-  if (!userId || !['admin', 'client'].includes(role)) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
+  const { userId, role, firstName, lastName, clientId, action } = await request.json()
+  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
+
+  const clerk = await clerkClient()
+
+  if (action === 'signin-link') {
+    const token = await clerk.signInTokens.createSignInToken({ userId, expiresInSeconds: 86400 })
+    const link = `https://vicar-builder.vercel.app/login?__clerk_ticket=${token.token}`
+    return NextResponse.json({ link })
   }
 
-  const client = await clerkClient()
-  await client.users.updateUserMetadata(userId, { publicMetadata: { role } })
+  if (role && ['admin', 'client'].includes(role)) {
+    await clerk.users.updateUserMetadata(userId, { publicMetadata: { role } })
+  }
+
+  if (firstName !== undefined || lastName !== undefined) {
+    const updates: Record<string, string> = {}
+    if (firstName !== undefined) updates.firstName = firstName
+    if (lastName !== undefined) updates.lastName = lastName
+    await clerk.users.updateUser(userId, updates)
+  }
+
+  if (clientId !== undefined) {
+    const { createServiceClient } = await import('@/lib/supabase')
+    const supabase = createServiceClient()
+    await supabase.from('client_users').delete().eq('user_id', userId)
+    if (clientId) {
+      await supabase.from('client_users').insert({ client_id: clientId, user_id: userId })
+    }
+  }
 
   return NextResponse.json({ ok: true })
 }

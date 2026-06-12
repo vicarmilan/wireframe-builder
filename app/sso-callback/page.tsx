@@ -1,22 +1,12 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { AuthenticateWithRedirectCallback } from '@clerk/nextjs'
 
-export default function SSOCallback() {
-  const { user, isLoaded } = useUser()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!isLoaded || !user) return
-    const role = (user.publicMetadata as Record<string, string>)?.role
-    router.replace(role === 'admin' ? '/dashboard' : '/portal')
-  }, [isLoaded, user, router])
-
+export default function SSOCallbackPage() {
   return (
-    <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
-      <div className="text-gray-400 text-sm">Laden...</div>
-    </div>
+    <AuthenticateWithRedirectCallback
+      signInFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/portal"
+    />
   )
 }

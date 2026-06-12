@@ -70,6 +70,7 @@ export interface Comment {
   content: string
   resolved: boolean
   created_at: string
+  edited_at?: string | null
 }
 
 export type ComponentType =

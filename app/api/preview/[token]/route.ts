@@ -17,13 +17,14 @@ export async function GET(_: Request, { params }: { params: Promise<{ token: str
 
   if (error || !project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Check access: admin or project member
+  // Check access: admin, explicit project member, or member of the linked client company
   const client = await clerkClient()
   const user = await client.users.getUser(userId)
   const role = (user.publicMetadata as Record<string, string>)?.role
   const isAdmin = role === 'admin'
 
   if (!isAdmin) {
+    // Check explicit project_members
     const { data: membership } = await supabase
       .from('project_members')
       .select('id')
@@ -31,7 +32,21 @@ export async function GET(_: Request, { params }: { params: Promise<{ token: str
       .eq('user_id', userId)
       .single()
 
-    if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // Check via client company link (only if client_access is enabled)
+    let hasClientAccess = false
+    if (!membership && project.client_id && project.client_access !== false) {
+      const { data: clientUser } = await supabase
+        .from('client_users')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('client_id', project.client_id)
+        .single()
+      hasClientAccess = !!clientUser
+    }
+
+    if (!membership && !hasClientAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
   }
 
   const { data: pages } = await supabase

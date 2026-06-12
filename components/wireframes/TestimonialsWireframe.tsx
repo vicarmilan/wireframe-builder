@@ -1,4 +1,4 @@
-import { WireframeProps, Ph, AvatarPh, Stars, Section, Tx } from './shared'
+import { WireframeProps, Ph, AvatarPh, Stars, Section, Tx, IconPh } from './shared'
 
 export default function TestimonialsWireframe({ props, variant, editing, onPropChange }: WireframeProps) {
   if (variant === 'featured') {
@@ -43,6 +43,57 @@ export default function TestimonialsWireframe({ props, variant, editing, onPropC
           </div>
         </div>
       </Section>
+    )
+  }
+
+  if (variant === 'logos') {
+    return (
+      <Section>
+        <div className="text-center mb-8">
+          <Tx value={props.title} fieldKey="title" placeholder="Vertrouwd door toonaangevende bedrijven" editing={editing} onPropChange={onPropChange} className="text-sm text-gray-400 uppercase tracking-widest font-medium" barWidth="w-64" />
+        </div>
+        <div className="flex items-center justify-center gap-10 flex-wrap">
+          {[
+            { tw: 'w-20', px: 80 }, { tw: 'w-24', px: 96 }, { tw: 'w-20', px: 72 },
+            { tw: 'w-24', px: 88 }, { tw: 'w-20', px: 76 }, { tw: 'w-24', px: 92 },
+          ].map(({ tw }, i) => (
+            <Ph key={i} w={tw} h="h-7" className="opacity-40" />
+          ))}
+        </div>
+      </Section>
+    )
+  }
+
+  if (variant === 'dark') {
+    return (
+      <section className="bg-gray-900 py-16 px-8">
+        <div className="max-w-6xl mx-auto space-y-10">
+          <div className="text-center space-y-2">
+            <div className="h-7 bg-white/85 rounded w-60 mx-auto" />
+            <div className="h-3 bg-white/30 rounded w-4/5 mx-auto" />
+          </div>
+          <div className="grid grid-cols-2 gap-5">
+            {[
+              { textKey: 't1_text', nameKey: 't1_name', roleKey: 't1_role', bg: 'bg-white/5 border border-white/10' },
+              { textKey: 't2_text', nameKey: 't2_name', roleKey: 't2_role', bg: 'bg-[#2563EB]' },
+            ].map(({ textKey, nameKey, roleKey, bg }, i) => (
+              <div key={i} className={`${bg} rounded-xl p-7 space-y-4`}>
+                <div className="text-4xl text-[#2563EB] font-bold leading-none">"</div>
+                <div className="space-y-1.5">
+                  <Tx value={props[textKey]} fieldKey={textKey} placeholder="Geweldige ervaring met dit team." editing={editing} onPropChange={onPropChange} className="text-sm text-white/70" barWidth="w-full" multiline={true} />
+                </div>
+                <div className="flex items-center gap-2.5 pt-3 border-t border-white/10">
+                  <AvatarPh size="w-8 h-8" />
+                  <div>
+                    <Tx value={props[nameKey]} fieldKey={nameKey} placeholder="Jan Janssen" editing={editing} onPropChange={onPropChange} className="text-xs font-semibold text-white/90" barWidth="w-20" />
+                    <Tx value={props[roleKey]} fieldKey={roleKey} placeholder="CEO, Bedrijf" editing={editing} onPropChange={onPropChange} className="text-xs text-white/40" barWidth="w-24" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     )
   }
 

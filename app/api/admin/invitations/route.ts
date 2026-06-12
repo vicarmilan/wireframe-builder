@@ -69,8 +69,43 @@ export async function GET() {
     id: inv.id,
     email: inv.emailAddress,
     role: (inv.publicMetadata as { role?: string })?.role ?? 'client',
+    clientId: (inv.publicMetadata as { client_id?: string })?.client_id ?? null,
     createdAt: inv.createdAt,
   })))
+}
+
+export async function PATCH(req: Request) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!await requireAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { invitationId } = await req.json()
+  if (!invitationId) return NextResponse.json({ error: 'invitationId required' }, { status: 400 })
+
+  const clerk = await clerkClient()
+
+  // Get existing invitation details
+  const { data: pending } = await clerk.invitations.getInvitationList({ status: 'pending' })
+  const inv = pending.find((i) => i.id === invitationId)
+  if (!inv) return NextResponse.json({ error: 'Uitnodiging niet gevonden' }, { status: 404 })
+
+  // Revoke old invitation
+  await clerk.invitations.revokeInvitation(invitationId)
+
+  // Create new invitation with same parameters
+  try {
+    await clerk.invitations.createInvitation({
+      emailAddress: inv.emailAddress,
+      publicMetadata: inv.publicMetadata as Record<string, unknown>,
+      redirectUrl: 'https://vicar-builder.vercel.app/register',
+      ignoreExisting: true,
+    })
+    return NextResponse.json({ ok: true })
+  } catch (err: unknown) {
+    const clerkErr = err as { errors?: { message: string }[] }
+    const message = clerkErr.errors?.[0]?.message ?? 'Kon uitnodiging niet opnieuw versturen'
+    return NextResponse.json({ error: message }, { status: 400 })
+  }
 }
 
 export async function DELETE(req: Request) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Shield, User, Search, UserPlus, Send, X, Mail, Clock, Trash2 } from 'lucide-react'
+import { ArrowLeft, Shield, User, Search, UserPlus, Send, X, Mail, Clock, Trash2, Pencil, RefreshCw, Link2, Check, Building2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -42,6 +42,8 @@ interface ClerkUser {
   id: string
   email: string
   name: string | null
+  firstName: string
+  lastName: string
   imageUrl: string
   role: 'admin' | 'client'
   createdAt: number
@@ -52,6 +54,7 @@ interface Invitation {
   id: string
   email: string
   role: 'admin' | 'client'
+  clientId: string | null
   createdAt: number
 }
 
@@ -75,8 +78,20 @@ export default function AdminUsersPage() {
   const [inviteSuccess, setInviteSuccess] = useState(false)
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([])
   const [clients, setClients] = useState<ClientRecord[]>([])
+  const [resending, setResending] = useState<string | null>(null)
 
-  useEffect(() => {
+  // Edit modal state
+  const [editUser, setEditUser] = useState<ClerkUser | null>(null)
+  const [editFirstName, setEditFirstName] = useState('')
+  const [editLastName, setEditLastName] = useState('')
+  const [editClientId, setEditClientId] = useState<string>('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
+  const [signinLink, setSigninLink] = useState<string | null>(null)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [generatingLink, setGeneratingLink] = useState(false)
+
+  function loadData() {
     fetch('/api/admin/users')
       .then((r) => r.json())
       .then((data) => { setUsers(Array.isArray(data) ? data : []); setLoading(false) })
@@ -86,7 +101,79 @@ export default function AdminUsersPage() {
     fetch('/api/admin/clients')
       .then((r) => r.json())
       .then((data) => { setClients(Array.isArray(data) ? data : []) })
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
+
+  function openEdit(user: ClerkUser) {
+    setEditUser(user)
+    setEditFirstName(user.firstName)
+    setEditLastName(user.lastName)
+    setEditClientId('')
+    setEditError('')
+    setSigninLink(null)
+    setLinkCopied(false)
+  }
+
+  function closeEdit() {
+    setEditUser(null)
+    setSigninLink(null)
+  }
+
+  async function saveEdit() {
+    if (!editUser) return
+    setEditSaving(true)
+    setEditError('')
+
+    const body: Record<string, unknown> = { userId: editUser.id }
+    if (editFirstName !== editUser.firstName) body.firstName = editFirstName
+    if (editLastName !== editUser.lastName) body.lastName = editLastName
+    if (editClientId) body.clientId = editClientId === 'none' ? null : editClientId
+
+    const res = await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    setEditSaving(false)
+    if (!res.ok) {
+      setEditError(data.error || 'Er ging iets mis')
+      return
+    }
+
+    // Update local user list
+    setUsers((prev) => prev.map((u) => u.id === editUser.id
+      ? { ...u, firstName: editFirstName, lastName: editLastName, name: [editFirstName, editLastName].filter(Boolean).join(' ') || null }
+      : u
+    ))
+    closeEdit()
+  }
+
+  async function generateSigninLink() {
+    if (!editUser) return
+    setGeneratingLink(true)
+    const res = await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: editUser.id, action: 'signin-link' }),
+    })
+    const data = await res.json()
+    setGeneratingLink(false)
+    if (res.ok) {
+      setSigninLink(data.link)
+      setLinkCopied(false)
+    } else {
+      setEditError(data.error || 'Kon inloglink niet aanmaken')
+    }
+  }
+
+  function copyLink() {
+    if (!signinLink) return
+    navigator.clipboard.writeText(signinLink)
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
+  }
 
   async function sendInvitation() {
     if (!inviteEmail.trim()) return
@@ -110,9 +197,7 @@ export default function AdminUsersPage() {
     }
     setInviteSuccess(true)
     setInviteEmail('')
-    fetch('/api/admin/users').then((r) => r.json()).then((d) => setUsers(Array.isArray(d) ? d : []))
-    fetch('/api/admin/invitations').then((r) => r.json()).then((d) => setPendingInvitations(Array.isArray(d) ? d : []))
-    fetch('/api/admin/clients').then((r) => r.json()).then((d) => setClients(Array.isArray(d) ? d : []))
+    loadData()
     setTimeout(() => {
       setInviteSuccess(false)
       setShowInvite(false)
@@ -129,6 +214,22 @@ export default function AdminUsersPage() {
       body: JSON.stringify({ invitationId }),
     })
     setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId))
+  }
+
+  async function resendInvitation(invitationId: string) {
+    setResending(invitationId)
+    const res = await fetch('/api/admin/invitations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invitationId }),
+    })
+    if (res.ok) {
+      // Reload pending invitations to get new ID
+      fetch('/api/admin/invitations')
+        .then((r) => r.json())
+        .then((data) => setPendingInvitations(Array.isArray(data) ? data : []))
+    }
+    setResending(null)
   }
 
   async function setRole(userId: string, role: 'admin' | 'client') {
@@ -182,6 +283,13 @@ export default function AdminUsersPage() {
               className="pl-8 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
             />
           </div>
+          <Link
+            href="/admin/clients"
+            className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <Building2 size={15} />
+            Bedrijven
+          </Link>
           <button
             onClick={() => { setShowInvite(true); setInviteError(''); setInviteSuccess(false) }}
             className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -288,6 +396,119 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      {/* Edit user modal */}
+      {editUser && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={closeEdit}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Pencil size={16} className="text-[#2563EB]" />
+                <h2 className="font-semibold text-gray-900">Account bewerken</h2>
+              </div>
+              <button onClick={closeEdit} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 mb-5 pb-5 border-b border-gray-100">
+              <UserAvatar user={editUser} />
+              <div>
+                <div className="text-sm font-medium text-gray-900">{editUser.name || editUser.email}</div>
+                <div className="text-xs text-gray-400">{editUser.email}</div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Voornaam</label>
+                  <input
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    placeholder="Voornaam"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Achternaam</label>
+                  <input
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
+                    placeholder="Achternaam"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Klant koppelen</label>
+                <select
+                  value={editClientId}
+                  onChange={(e) => setEditClientId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Niet wijzigen</option>
+                  <option value="none">Geen klant (ontkoppelen)</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Inloglink</label>
+                <p className="text-xs text-gray-400 mb-2">Genereer een tijdelijke inloglink (geldig 24u) die je aan de gebruiker kan sturen als ze hun wachtwoord vergeten zijn.</p>
+                {signinLink ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 truncate font-mono">
+                      {signinLink}
+                    </div>
+                    <button
+                      onClick={copyLink}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
+                        linkCopied
+                          ? 'bg-green-50 text-green-700 border border-green-200'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+                      }`}
+                    >
+                      {linkCopied ? <Check size={12} /> : <Link2 size={12} />}
+                      {linkCopied ? 'Gekopieerd' : 'Kopieer'}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={generateSigninLink}
+                    disabled={generatingLink}
+                    className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <Link2 size={13} />
+                    {generatingLink ? 'Aanmaken...' : 'Inloglink genereren'}
+                  </button>
+                )}
+              </div>
+
+              {editError && <p className="text-xs text-red-500">{editError}</p>}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={closeEdit}
+                  className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={saveEdit}
+                  disabled={editSaving}
+                  className="flex-1 py-2.5 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {editSaving ? 'Opslaan...' : 'Opslaan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-4xl mx-auto px-8 py-10 space-y-8">
         {loading ? (
           <div className="space-y-3">
@@ -302,7 +523,7 @@ export default function AdminUsersPage() {
               description="Hebben toegang tot het dashboard en kunnen projecten aanmaken en bewerken."
             >
               {admins.map((user) => (
-                <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} onDelete={deleteUser} />
+                <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} onDelete={deleteUser} onEdit={openEdit} />
               ))}
               {admins.length === 0 && <EmptyRow label="Geen admins gevonden" />}
             </Section>
@@ -314,7 +535,7 @@ export default function AdminUsersPage() {
               description="Kunnen enkel preview links bekijken en feedback geven."
             >
               {clientUsers.map((user) => (
-                <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} onDelete={deleteUser} />
+                <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} onDelete={deleteUser} onEdit={openEdit} />
               ))}
               {clientUsers.length === 0 && <EmptyRow label="Geen klanten gevonden" />}
             </Section>
@@ -335,12 +556,23 @@ export default function AdminUsersPage() {
                       <div className="text-sm text-gray-700 truncate">{inv.email}</div>
                       <div className="text-xs text-gray-400">Uitgenodigd als {inv.role === 'admin' ? 'Admin' : 'Klant'}</div>
                     </div>
-                    <button
-                      onClick={() => revokeInvitation(inv.id)}
-                      className="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded hover:bg-red-50"
-                    >
-                      Intrekken
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => resendInvitation(inv.id)}
+                        disabled={resending === inv.id}
+                        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-blue-50 disabled:opacity-50"
+                        title="Opnieuw versturen"
+                      >
+                        <RefreshCw size={12} className={resending === inv.id ? 'animate-spin' : ''} />
+                        Opnieuw versturen
+                      </button>
+                      <button
+                        onClick={() => revokeInvitation(inv.id)}
+                        className="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded hover:bg-red-50"
+                      >
+                        Intrekken
+                      </button>
+                    </div>
                   </div>
                 ))}
               </Section>
@@ -374,11 +606,12 @@ function Section({ title, icon, count, description, children }: {
   )
 }
 
-function UserRow({ user, updating, onSetRole, onDelete }: {
+function UserRow({ user, updating, onSetRole, onDelete, onEdit }: {
   user: ClerkUser
   updating: boolean
   onSetRole: (id: string, role: 'admin' | 'client') => void
   onDelete: (id: string) => void
+  onEdit: (user: ClerkUser) => void
 }) {
   return (
     <div className="flex items-center gap-4 px-5 py-3.5">
@@ -402,6 +635,13 @@ function UserRow({ user, updating, onSetRole, onDelete }: {
           <option value="client">Klant</option>
           <option value="admin">Admin</option>
         </select>
+        <button
+          onClick={() => onEdit(user)}
+          className="p-1.5 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Bewerken"
+        >
+          <Pencil size={14} />
+        </button>
         <button
           onClick={() => onDelete(user.id)}
           className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"

@@ -1,9 +1,14 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { X, Upload, Trash2, AlertTriangle } from 'lucide-react'
 import { Project } from '@/types'
 import Image from 'next/image'
+
+interface Client {
+  id: string
+  name: string
+}
 
 interface Props {
   project: Project
@@ -14,7 +19,8 @@ interface Props {
 
 export default function EditProjectModal({ project, onClose, onUpdated, onDeleted }: Props) {
   const [name, setName] = useState(project.name)
-  const [clientName, setClientName] = useState(project.client_name)
+  const [clientId, setClientId] = useState((project as Project & { client_id?: string }).client_id ?? '')
+  const [clients, setClients] = useState<Client[]>([])
   const [logoUrl, setLogoUrl] = useState(project.logo_url || '')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -22,6 +28,12 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetch('/api/admin/clients')
+      .then((r) => r.json())
+      .then((data) => setClients(Array.isArray(data) ? data : []))
+  }, [])
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -41,14 +53,14 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || !clientName.trim()) return
+    if (!name.trim() || !clientId) return
     setSaving(true)
     setError('')
 
     const res = await fetch(`/api/projects/${project.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), client_name: clientName.trim(), logo_url: logoUrl || null }),
+      body: JSON.stringify({ name: name.trim(), client_id: clientId, logo_url: logoUrl || null }),
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error || 'Opslaan mislukt'); setSaving(false); return }
@@ -61,6 +73,8 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
     if (!res.ok) { setError('Verwijderen mislukt'); setDeleting(false); return }
     onDeleted()
   }
+
+  const selectedClient = clients.find((c) => c.id === clientId)
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -83,7 +97,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
                     <Image src={logoUrl} alt="Logo" width={56} height={56} className="w-full h-full object-contain p-1" />
                   ) : (
                     <span className="text-xl font-bold text-gray-300">
-                      {clientName.charAt(0).toUpperCase() || '?'}
+                      {(selectedClient?.name ?? project.client_name ?? '?').charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -128,14 +142,24 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
               />
             </div>
 
-            {/* Klantnaam */}
+            {/* Klant */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Klantnaam</label>
-              <input
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Klant</label>
+              <select
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">Selecteer een klant...</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {clientId && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Alle gebruikers van dit bedrijf krijgen automatisch toegang tot de preview.
+                </p>
+              )}
             </div>
 
             {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -159,7 +183,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
                 </button>
                 <button
                   type="submit"
-                  disabled={saving || !name.trim() || !clientName.trim()}
+                  disabled={saving || !name.trim() || !clientId}
                   className="bg-[#2563EB] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {saving ? 'Opslaan...' : 'Opslaan'}
