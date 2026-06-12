@@ -14,6 +14,9 @@ export const COMPONENT_CATEGORIES: { type: ComponentType; label: string; icon: s
   { type: 'faq', label: 'FAQ', icon: 'HelpCircle' },
   { type: 'contact', label: 'Contact', icon: 'Mail' },
   { type: 'footer', label: 'Footer', icon: 'AlignBottom' },
+  { type: 'restaurant', label: 'Restaurant', icon: 'UtensilsCrossed' },
+  { type: 'hotel', label: 'Hotel', icon: 'BedDouble' },
+  { type: 'marketplace', label: 'Marketplace', icon: 'ShoppingBag' },
 ]
 
 export const COMPONENTS: ComponentDefinition[] = [
@@ -45,6 +48,47 @@ export const COMPONENTS: ComponentDefinition[] = [
     fields: [
       { key: 'logo', label: 'Logo tekst', type: 'text', placeholder: 'Bedrijfsnaam' },
       { key: 'cta', label: 'CTA knop', type: 'text', placeholder: 'Gratis proberen' },
+    ],
+  },
+  {
+    type: 'navigation',
+    variant: 'announcement',
+    label: 'Announcement nav',
+    description: 'Blauwe annoncementbalk + login/signup',
+    fields: [
+      { key: 'logo', label: 'Logo tekst', type: 'text', placeholder: 'Bedrijfsnaam' },
+      { key: 'announcement', label: 'Aankondiging', type: 'text', placeholder: '🎉 Nieuw: bekijk onze laatste features' },
+      { key: 'cta', label: 'CTA knop', type: 'text', placeholder: 'Aanmelden' },
+    ],
+  },
+  {
+    type: 'navigation',
+    variant: 'search',
+    label: 'Nav met zoekbalk',
+    description: 'Navigatie met zoekbalk in het midden',
+    fields: [
+      { key: 'logo', label: 'Logo tekst', type: 'text', placeholder: 'Bedrijfsnaam' },
+      { key: 'cta', label: 'CTA knop', type: 'text', placeholder: 'Aanmelden' },
+    ],
+  },
+  {
+    type: 'navigation',
+    variant: 'dark',
+    label: 'Donkere nav',
+    description: 'Donkere achtergrond navigatie',
+    fields: [
+      { key: 'logo', label: 'Logo tekst', type: 'text', placeholder: 'Bedrijfsnaam' },
+      { key: 'cta', label: 'CTA knop', type: 'text', placeholder: 'Aan de slag' },
+    ],
+  },
+  {
+    type: 'navigation',
+    variant: 'transparent',
+    label: 'Transparante nav',
+    description: 'Overlay navigatie op hero-afbeelding',
+    fields: [
+      { key: 'logo', label: 'Logo tekst', type: 'text', placeholder: 'Bedrijfsnaam' },
+      { key: 'cta', label: 'CTA knop', type: 'text', placeholder: 'Boek nu' },
     ],
   },
 
@@ -94,6 +138,62 @@ export const COMPONENTS: ComponentDefinition[] = [
       { key: 'cta_primary', label: 'Knop', type: 'text', placeholder: 'Bekijk ons werk' },
     ],
   },
+  {
+    type: 'hero',
+    variant: 'fullscreen',
+    label: 'Fullscreen hero',
+    description: 'Afbeelding met gradient overlay en tekst',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'textarea', placeholder: 'Ontdek de mogelijkheden' },
+      { key: 'subtitle', label: 'Subtitel', type: 'text', placeholder: 'Jouw verhaal begint hier.' },
+      { key: 'cta_primary', label: 'Primaire knop', type: 'text', placeholder: 'Meer ontdekken' },
+    ],
+  },
+  {
+    type: 'hero',
+    variant: 'dark-split',
+    label: 'Dark split hero',
+    description: 'Donkere linkerkant, afbeelding rechts',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'textarea', placeholder: 'Krachtige oplossingen voor jouw bedrijf' },
+      { key: 'subtitle', label: 'Subtitel', type: 'textarea', placeholder: 'Beschrijf hier je kernboodschap.' },
+      { key: 'cta_primary', label: 'Primaire knop', type: 'text', placeholder: 'Aan de slag' },
+      { key: 'cta_secondary', label: 'Secundaire knop', type: 'text', placeholder: 'Demo bekijken' },
+    ],
+  },
+  {
+    type: 'hero',
+    variant: 'availability',
+    label: 'Availability hero',
+    description: 'Booking bar over hero-afbeelding (hotel/restaurant)',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'textarea', placeholder: 'Welkom in ons hotel' },
+      { key: 'cta_primary', label: 'Boek knop', type: 'text', placeholder: 'Beschikbaarheid controleren' },
+    ],
+  },
+  {
+    type: 'hero',
+    variant: 'newsletter',
+    label: 'Newsletter hero',
+    description: 'Email capture hero gecentreerd',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'textarea', placeholder: 'Blijf op de hoogte' },
+      { key: 'subtitle', label: 'Subtitel', type: 'text', placeholder: 'Ontvang wekelijks de laatste nieuwtjes.' },
+      { key: 'cta_primary', label: 'Knop tekst', type: 'text', placeholder: 'Inschrijven' },
+    ],
+  },
+  {
+    type: 'hero',
+    variant: 'social-proof',
+    label: 'Social proof hero',
+    description: 'Hero met avatars en sterren beoordeling',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'textarea', placeholder: 'Vertrouwd door duizenden klanten' },
+      { key: 'subtitle', label: 'Subtitel', type: 'textarea', placeholder: 'Sluit je aan bij de groeiende community.' },
+      { key: 'cta_primary', label: 'Primaire knop', type: 'text', placeholder: 'Gratis proberen' },
+      { key: 'social_proof_text', label: 'Social proof tekst', type: 'text', placeholder: '2.000+ tevreden klanten' },
+    ],
+  },
 
   // Features
   {
@@ -134,6 +234,50 @@ export const COMPONENTS: ComponentDefinition[] = [
       { key: 'f2_desc', label: 'Stap 2 tekst', type: 'textarea', placeholder: 'Beschrijving van stap 2.', group: 'Stap 2' },
     ],
   },
+  {
+    type: 'features',
+    variant: 'grid-4',
+    label: 'Features 4-kolommen',
+    description: '4 features in een raster',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Alles wat je nodig hebt' },
+      { key: 'subtitle', label: 'Subtitel', type: 'text', placeholder: 'Bekijk onze voordelen.' },
+    ],
+  },
+  {
+    type: 'features',
+    variant: 'numbered',
+    label: 'Genummerde features',
+    description: 'Grote nummers (01 02 03) met tekst',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Hoe het werkt' },
+      { key: 'f1_title', label: 'Stap 1 titel', type: 'text', placeholder: 'Aanmelden', group: 'Stap 1' },
+      { key: 'f1_desc', label: 'Stap 1 tekst', type: 'textarea', placeholder: 'Maak gratis een account aan.', group: 'Stap 1' },
+      { key: 'f2_title', label: 'Stap 2 titel', type: 'text', placeholder: 'Instellen', group: 'Stap 2' },
+      { key: 'f2_desc', label: 'Stap 2 tekst', type: 'textarea', placeholder: 'Configureer je omgeving.', group: 'Stap 2' },
+      { key: 'f3_title', label: 'Stap 3 titel', type: 'text', placeholder: 'Lanceren', group: 'Stap 3' },
+      { key: 'f3_desc', label: 'Stap 3 tekst', type: 'textarea', placeholder: 'Ga live en groei.', group: 'Stap 3' },
+    ],
+  },
+  {
+    type: 'features',
+    variant: 'timeline',
+    label: 'Timeline features',
+    description: 'Genummerde stappen met verbindingslijn',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Ons proces' },
+    ],
+  },
+  {
+    type: 'features',
+    variant: 'dark',
+    label: 'Donkere features',
+    description: 'Donkere achtergrond met glassmorphism kaarten',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Krachtige features' },
+      { key: 'subtitle', label: 'Subtitel', type: 'text', placeholder: 'Alles in één platform.' },
+    ],
+  },
 
   // Stats
   {
@@ -150,6 +294,57 @@ export const COMPONENTS: ComponentDefinition[] = [
       { key: 's3_label', label: 'Stat 3 label', type: 'text', placeholder: 'Landen', group: 'Stat 3' },
       { key: 's4_num', label: 'Stat 4 getal', type: 'text', placeholder: '24/7', group: 'Stat 4' },
       { key: 's4_label', label: 'Stat 4 label', type: 'text', placeholder: 'Support', group: 'Stat 4' },
+    ],
+  },
+
+  {
+    type: 'stats',
+    variant: 'icons',
+    label: 'Stats met iconen',
+    description: 'Statistieken met icoon en beschrijving',
+    fields: [
+      { key: 's1_num', label: 'Stat 1 getal', type: 'text', placeholder: '10.000+', group: 'Stat 1' },
+      { key: 's1_label', label: 'Stat 1 label', type: 'text', placeholder: 'Klanten', group: 'Stat 1' },
+      { key: 's1_desc', label: 'Stat 1 beschrijving', type: 'text', placeholder: 'Wereldwijd tevreden gebruikers', group: 'Stat 1' },
+      { key: 's2_num', label: 'Stat 2 getal', type: 'text', placeholder: '99%', group: 'Stat 2' },
+      { key: 's2_label', label: 'Stat 2 label', type: 'text', placeholder: 'Tevredenheid', group: 'Stat 2' },
+      { key: 's2_desc', label: 'Stat 2 beschrijving', type: 'text', placeholder: 'Aanbevolen door gebruikers', group: 'Stat 2' },
+      { key: 's3_num', label: 'Stat 3 getal', type: 'text', placeholder: '50+', group: 'Stat 3' },
+      { key: 's3_label', label: 'Stat 3 label', type: 'text', placeholder: 'Landen', group: 'Stat 3' },
+      { key: 's3_desc', label: 'Stat 3 beschrijving', type: 'text', placeholder: 'Wereldwijde aanwezigheid', group: 'Stat 3' },
+      { key: 's4_num', label: 'Stat 4 getal', type: 'text', placeholder: '24/7', group: 'Stat 4' },
+      { key: 's4_label', label: 'Stat 4 label', type: 'text', placeholder: 'Support', group: 'Stat 4' },
+      { key: 's4_desc', label: 'Stat 4 beschrijving', type: 'text', placeholder: 'Altijd bereikbaar', group: 'Stat 4' },
+    ],
+  },
+  {
+    type: 'stats',
+    variant: 'dark',
+    label: 'Donkere stats',
+    description: 'Statistieken op donkere achtergrond',
+    fields: [
+      { key: 's1_num', label: 'Stat 1 getal', type: 'text', placeholder: '10.000+' },
+      { key: 's1_label', label: 'Stat 1 label', type: 'text', placeholder: 'Klanten' },
+      { key: 's2_num', label: 'Stat 2 getal', type: 'text', placeholder: '99%' },
+      { key: 's2_label', label: 'Stat 2 label', type: 'text', placeholder: 'Tevredenheid' },
+      { key: 's3_num', label: 'Stat 3 getal', type: 'text', placeholder: '50+' },
+      { key: 's3_label', label: 'Stat 3 label', type: 'text', placeholder: 'Landen' },
+      { key: 's4_num', label: 'Stat 4 getal', type: 'text', placeholder: '24/7' },
+      { key: 's4_label', label: 'Stat 4 label', type: 'text', placeholder: 'Support' },
+    ],
+  },
+  {
+    type: 'stats',
+    variant: 'progress',
+    label: 'Stats met voortgangsbalk',
+    description: 'Horizontale voortgangsbalken per statistiek',
+    fields: [
+      { key: 's1_label', label: 'Stat 1 label', type: 'text', placeholder: 'Klanttevredenheid', group: 'Stat 1' },
+      { key: 's1_num', label: 'Stat 1 percentage', type: 'text', placeholder: '98%', group: 'Stat 1' },
+      { key: 's2_label', label: 'Stat 2 label', type: 'text', placeholder: 'Projectsucces', group: 'Stat 2' },
+      { key: 's2_num', label: 'Stat 2 percentage', type: 'text', placeholder: '95%', group: 'Stat 2' },
+      { key: 's3_label', label: 'Stat 3 label', type: 'text', placeholder: 'Op tijd geleverd', group: 'Stat 3' },
+      { key: 's3_num', label: 'Stat 3 percentage', type: 'text', placeholder: '92%', group: 'Stat 3' },
     ],
   },
 
@@ -183,6 +378,29 @@ export const COMPONENTS: ComponentDefinition[] = [
       { key: 'role', label: 'Functie', type: 'text', placeholder: 'CEO, Bedrijf X' },
     ],
   },
+  {
+    type: 'testimonials',
+    variant: 'logos',
+    label: 'Logo strip',
+    description: 'Klantlogo\'s als social proof balk',
+    fields: [
+      { key: 'title', label: 'Boven tekst', type: 'text', placeholder: 'Vertrouwd door toonaangevende bedrijven' },
+    ],
+  },
+  {
+    type: 'testimonials',
+    variant: 'dark',
+    label: 'Donkere testimonials',
+    description: 'Donkere achtergrond, 2-kolom met aanhalingstekens',
+    fields: [
+      { key: 't1_text', label: 'Quote 1', type: 'textarea', placeholder: 'Geweldige ervaring met dit team.', group: 'Quote 1' },
+      { key: 't1_name', label: 'Naam 1', type: 'text', placeholder: 'Jan Janssen', group: 'Quote 1' },
+      { key: 't1_role', label: 'Functie 1', type: 'text', placeholder: 'CEO, Bedrijf', group: 'Quote 1' },
+      { key: 't2_text', label: 'Quote 2', type: 'textarea', placeholder: 'Zou het iedereen aanraden.', group: 'Quote 2' },
+      { key: 't2_name', label: 'Naam 2', type: 'text', placeholder: 'Marie Pieters', group: 'Quote 2' },
+      { key: 't2_role', label: 'Functie 2', type: 'text', placeholder: 'Marketingmanager', group: 'Quote 2' },
+    ],
+  },
 
   // Pricing
   {
@@ -201,6 +419,37 @@ export const COMPONENTS: ComponentDefinition[] = [
     ],
   },
 
+  {
+    type: 'pricing',
+    variant: 'table',
+    label: 'Vergelijkingstabel',
+    description: 'Feature vergelijking per plan met checkmarks',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Vergelijk plannen' },
+      { key: 'p1_name', label: 'Plan 1 naam', type: 'text', placeholder: 'Starter', group: 'Plan 1' },
+      { key: 'p1_price', label: 'Plan 1 prijs', type: 'text', placeholder: '€29/maand', group: 'Plan 1' },
+      { key: 'p2_name', label: 'Plan 2 naam', type: 'text', placeholder: 'Pro', group: 'Plan 2' },
+      { key: 'p2_price', label: 'Plan 2 prijs', type: 'text', placeholder: '€79/maand', group: 'Plan 2' },
+      { key: 'p3_name', label: 'Plan 3 naam', type: 'text', placeholder: 'Enterprise', group: 'Plan 3' },
+      { key: 'p3_price', label: 'Plan 3 prijs', type: 'text', placeholder: 'Op aanvraag', group: 'Plan 3' },
+    ],
+  },
+  {
+    type: 'pricing',
+    variant: 'packages',
+    label: 'Dienst pakketten',
+    description: 'Pakketten met afbeelding, prijs en boekknop',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Onze pakketten' },
+      { key: 'p1_name', label: 'Pakket 1 naam', type: 'text', placeholder: 'Basis pakket', group: 'Pakket 1' },
+      { key: 'p1_price', label: 'Pakket 1 prijs', type: 'text', placeholder: 'Vanaf €500', group: 'Pakket 1' },
+      { key: 'p2_name', label: 'Pakket 2 naam', type: 'text', placeholder: 'Standaard pakket', group: 'Pakket 2' },
+      { key: 'p2_price', label: 'Pakket 2 prijs', type: 'text', placeholder: 'Vanaf €1.200', group: 'Pakket 2' },
+      { key: 'p3_name', label: 'Pakket 3 naam', type: 'text', placeholder: 'Premium pakket', group: 'Pakket 3' },
+      { key: 'p3_price', label: 'Pakket 3 prijs', type: 'text', placeholder: 'Vanaf €2.500', group: 'Pakket 3' },
+    ],
+  },
+
   // CTA
   {
     type: 'cta',
@@ -212,6 +461,51 @@ export const COMPONENTS: ComponentDefinition[] = [
       { key: 'subtitle', label: 'Subtitel', type: 'text', placeholder: 'Start vandaag gratis.' },
       { key: 'cta_primary', label: 'Primaire knop', type: 'text', placeholder: 'Gratis starten' },
       { key: 'cta_secondary', label: 'Secundaire knop', type: 'text', placeholder: 'Demo aanvragen' },
+    ],
+  },
+  {
+    type: 'cta',
+    variant: 'split',
+    label: 'Split CTA',
+    description: 'Lichtblauwe linkerkant met tekst, afbeelding rechts',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'textarea', placeholder: 'Klaar om te starten?' },
+      { key: 'subtitle', label: 'Subtitel', type: 'textarea', placeholder: 'Neem vandaag nog contact op.' },
+      { key: 'cta_primary', label: 'Primaire knop', type: 'text', placeholder: 'Aan de slag' },
+      { key: 'cta_secondary', label: 'Secundaire knop', type: 'text', placeholder: 'Meer info' },
+    ],
+  },
+  {
+    type: 'cta',
+    variant: 'newsletter',
+    label: 'Newsletter CTA',
+    description: 'Donkere achtergrond met email capture, twee kolommen',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'textarea', placeholder: 'Schrijf je in voor onze nieuwsbrief' },
+      { key: 'subtitle', label: 'Subtitel', type: 'text', placeholder: 'Wekelijks het laatste nieuws.' },
+      { key: 'cta', label: 'Knop tekst', type: 'text', placeholder: 'Inschrijven' },
+    ],
+  },
+  {
+    type: 'cta',
+    variant: 'phone',
+    label: 'Telefoon CTA',
+    description: 'Prominent telefoonnummer met icoon',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'text', placeholder: 'Bel ons direct' },
+      { key: 'phone', label: 'Telefoonnummer', type: 'text', placeholder: '+32 000 00 00 00' },
+      { key: 'subtitle', label: 'Ondertitel', type: 'text', placeholder: 'Bereikbaar van ma-vr 9u-17u' },
+    ],
+  },
+  {
+    type: 'cta',
+    variant: 'strip',
+    label: 'Strip CTA',
+    description: 'Compacte balk met icoon, tekst en knoppen',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'text', placeholder: 'Interesse? Neem contact op.' },
+      { key: 'cta_primary', label: 'Primaire knop', type: 'text', placeholder: 'Contact' },
+      { key: 'cta_secondary', label: 'Secundaire knop', type: 'text', placeholder: 'Meer info' },
     ],
   },
   {
@@ -245,6 +539,33 @@ export const COMPONENTS: ComponentDefinition[] = [
   // Team
   {
     type: 'team',
+    variant: 'founder',
+    label: 'Founder + team',
+    description: 'Uitgelichte founder kaart + teamgrid',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Het team achter het bedrijf' },
+      { key: 'founder_name', label: 'Founder naam', type: 'text', placeholder: 'Jan Janssen', group: 'Founder' },
+      { key: 'founder_role', label: 'Founder functie', type: 'text', placeholder: 'CEO & Founder', group: 'Founder' },
+      { key: 'founder_bio', label: 'Founder bio', type: 'textarea', placeholder: 'Korte introductie over de founder.', group: 'Founder' },
+    ],
+  },
+  {
+    type: 'team',
+    variant: 'list',
+    label: 'Team lijst',
+    description: 'Horizontale lijst met bio en social iconen',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Maak kennis met ons team' },
+      { key: 'm1_name', label: 'Lid 1 naam', type: 'text', placeholder: 'Jan Janssen', group: 'Lid 1' },
+      { key: 'm1_role', label: 'Lid 1 functie', type: 'text', placeholder: 'CEO & Founder', group: 'Lid 1' },
+      { key: 'm2_name', label: 'Lid 2 naam', type: 'text', placeholder: 'Marie Pieters', group: 'Lid 2' },
+      { key: 'm2_role', label: 'Lid 2 functie', type: 'text', placeholder: 'Designer', group: 'Lid 2' },
+      { key: 'm3_name', label: 'Lid 3 naam', type: 'text', placeholder: 'Tom Claes', group: 'Lid 3' },
+      { key: 'm3_role', label: 'Lid 3 functie', type: 'text', placeholder: 'Developer', group: 'Lid 3' },
+    ],
+  },
+  {
+    type: 'team',
     variant: 'grid',
     label: 'Team grid',
     description: 'Teamleden met foto, naam en functie',
@@ -276,6 +597,18 @@ export const COMPONENTS: ComponentDefinition[] = [
     ],
   },
 
+  {
+    type: 'blog',
+    variant: 'featured',
+    label: 'Featured blog',
+    description: 'Groot uitgelicht artikel + 3 secundaire items',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Laatste artikelen' },
+      { key: 'a1_title', label: 'Uitgelicht artikel titel', type: 'text', placeholder: 'Het grote verhaal van dit jaar', group: 'Uitgelicht' },
+      { key: 'a1_date', label: 'Uitgelicht artikel datum', type: 'text', placeholder: '12 juni 2025', group: 'Uitgelicht' },
+    ],
+  },
+
   // FAQ
   {
     type: 'faq',
@@ -284,6 +617,23 @@ export const COMPONENTS: ComponentDefinition[] = [
     description: 'Veelgestelde vragen uitklapbaar',
     fields: [
       { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Veelgestelde vragen' },
+      { key: 'q1', label: 'Vraag 1', type: 'text', placeholder: 'Hoe werkt het?', group: 'Vraag 1' },
+      { key: 'a1', label: 'Antwoord 1', type: 'textarea', placeholder: 'Het werkt eenvoudig door...', group: 'Vraag 1' },
+      { key: 'q2', label: 'Vraag 2', type: 'text', placeholder: 'Wat zijn de kosten?', group: 'Vraag 2' },
+      { key: 'a2', label: 'Antwoord 2', type: 'textarea', placeholder: 'De kosten zijn afhankelijk van...', group: 'Vraag 2' },
+      { key: 'q3', label: 'Vraag 3', type: 'text', placeholder: 'Kan ik gratis proberen?', group: 'Vraag 3' },
+      { key: 'a3', label: 'Antwoord 3', type: 'textarea', placeholder: 'Ja, je kan 14 dagen gratis proberen.', group: 'Vraag 3' },
+    ],
+  },
+
+  {
+    type: 'faq',
+    variant: 'two-column',
+    label: 'FAQ twee kolommen',
+    description: 'Titel + contact CTA links, accordion rechts',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Veelgestelde vragen' },
+      { key: 'cta', label: 'Contact knop', type: 'text', placeholder: 'Stel een vraag' },
       { key: 'q1', label: 'Vraag 1', type: 'text', placeholder: 'Hoe werkt het?', group: 'Vraag 1' },
       { key: 'a1', label: 'Antwoord 1', type: 'textarea', placeholder: 'Het werkt eenvoudig door...', group: 'Vraag 1' },
       { key: 'q2', label: 'Vraag 2', type: 'text', placeholder: 'Wat zijn de kosten?', group: 'Vraag 2' },
@@ -338,6 +688,175 @@ export const COMPONENTS: ComponentDefinition[] = [
       { key: 'logo', label: 'Logo tekst', type: 'text', placeholder: 'Bedrijfsnaam' },
       { key: 'tagline', label: 'Tagline', type: 'text', placeholder: 'Jouw omschrijving hier' },
       { key: 'copyright', label: 'Copyright', type: 'text', placeholder: '© 2025 Bedrijfsnaam.' },
+    ],
+  },
+  {
+    type: 'footer',
+    variant: 'cta-footer',
+    label: 'CTA footer',
+    description: 'Blauwe pre-footer CTA balk + donkere footer',
+    fields: [
+      { key: 'cta_title', label: 'CTA titel', type: 'text', placeholder: 'Klaar om te starten?' },
+      { key: 'cta_primary', label: 'Primaire knop', type: 'text', placeholder: 'Aan de slag' },
+      { key: 'cta_secondary', label: 'Secundaire knop', type: 'text', placeholder: 'Demo aanvragen' },
+      { key: 'logo', label: 'Logo tekst', type: 'text', placeholder: 'Bedrijfsnaam' },
+      { key: 'copyright', label: 'Copyright', type: 'text', placeholder: '© 2025 Bedrijfsnaam.' },
+    ],
+  },
+
+  // Restaurant
+  {
+    type: 'restaurant',
+    variant: 'gallery',
+    label: 'Restaurant galerij',
+    description: 'Masonry fotogalerij (standaard)',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'text', placeholder: 'Onze sfeer' },
+    ],
+  },
+  {
+    type: 'restaurant',
+    variant: 'menu',
+    label: 'Menu overzicht',
+    description: 'Categorietabs + gerechtenraster met prijs en tags',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Ons menu' },
+    ],
+  },
+  {
+    type: 'restaurant',
+    variant: 'specials',
+    label: 'Dagschotel / specials',
+    description: 'Split layout met chef\'s dagspecial',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'text', placeholder: 'Dagspecials' },
+      { key: 'dish_name', label: 'Gerechtnaam', type: 'text', placeholder: 'Gegrilde zalm' },
+      { key: 'dish_price', label: 'Prijs', type: 'text', placeholder: '€22,50' },
+      { key: 'dish_desc', label: 'Beschrijving', type: 'textarea', placeholder: 'Vers gegrilde zalm met seizoensgroenten.' },
+    ],
+  },
+  {
+    type: 'restaurant',
+    variant: 'reservation',
+    label: 'Reservatieformulier',
+    description: 'Tafelreservatie met datum, tijd en personen',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'text', placeholder: 'Reserveer een tafel' },
+      { key: 'cta', label: 'Knop tekst', type: 'text', placeholder: 'Reserveer nu' },
+    ],
+  },
+  {
+    type: 'restaurant',
+    variant: 'hours',
+    label: 'Openingsuren',
+    description: 'Openingstijden + kaart placeholder',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'text', placeholder: 'Openingsuren & locatie' },
+      { key: 'address', label: 'Adres', type: 'text', placeholder: 'Kerkstraat 1, 1000 Brussel' },
+      { key: 'phone', label: 'Telefoon', type: 'text', placeholder: '+32 000 00 00 00' },
+    ],
+  },
+  {
+    type: 'restaurant',
+    variant: 'reviews',
+    label: 'Restaurant reviews',
+    description: 'Totaalscore + 3 reviewkaarten',
+    fields: [
+      { key: 'title', label: 'Titel', type: 'text', placeholder: 'Wat onze gasten zeggen' },
+    ],
+  },
+  {
+    type: 'restaurant',
+    variant: 'delivery',
+    label: 'Bezorging & afhaling',
+    description: 'Bezorging vs afhalen split CTA',
+    fields: [
+      { key: 'delivery_title', label: 'Bezorging titel', type: 'text', placeholder: 'Bezorging aan huis', group: 'Bezorging' },
+      { key: 'delivery_cta', label: 'Bezorging knop', type: 'text', placeholder: 'Bestel nu', group: 'Bezorging' },
+      { key: 'pickup_title', label: 'Afhaling titel', type: 'text', placeholder: 'Afhalen in restaurant', group: 'Afhaling' },
+      { key: 'pickup_cta', label: 'Afhaling knop', type: 'text', placeholder: 'Reserveer', group: 'Afhaling' },
+    ],
+  },
+
+  // Hotel
+  {
+    type: 'hotel',
+    variant: 'packages',
+    label: 'Hotel arrangementen',
+    description: '2 pakketkaarten met afbeelding en prijs (standaard)',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Speciale arrangementen' },
+      { key: 'p1_name', label: 'Pakket 1 naam', type: 'text', placeholder: 'Weekendarrangement', group: 'Pakket 1' },
+      { key: 'p1_price', label: 'Pakket 1 prijs', type: 'text', placeholder: '€199', group: 'Pakket 1' },
+      { key: 'p2_name', label: 'Pakket 2 naam', type: 'text', placeholder: 'Romantisch pakket', group: 'Pakket 2' },
+      { key: 'p2_price', label: 'Pakket 2 prijs', type: 'text', placeholder: '€349', group: 'Pakket 2' },
+    ],
+  },
+  {
+    type: 'hotel',
+    variant: 'rooms',
+    label: 'Kamers overzicht',
+    description: '3 kamerkaarten met beschikbaarheid en prijs',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Onze kamers' },
+      { key: 'r1_name', label: 'Kamer 1 naam', type: 'text', placeholder: 'Standaard kamer', group: 'Kamer 1' },
+      { key: 'r1_price', label: 'Kamer 1 prijs', type: 'text', placeholder: '€120', group: 'Kamer 1' },
+      { key: 'r2_name', label: 'Kamer 2 naam', type: 'text', placeholder: 'Suite', group: 'Kamer 2' },
+      { key: 'r2_price', label: 'Kamer 2 prijs', type: 'text', placeholder: '€220', group: 'Kamer 2' },
+      { key: 'r3_name', label: 'Kamer 3 naam', type: 'text', placeholder: 'Budget kamer', group: 'Kamer 3' },
+      { key: 'r3_price', label: 'Kamer 3 prijs', type: 'text', placeholder: '€85', group: 'Kamer 3' },
+    ],
+  },
+  {
+    type: 'hotel',
+    variant: 'amenities',
+    label: 'Faciliteiten',
+    description: '4x2 icoonraster met faciliteiten',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Onze faciliteiten' },
+      { key: 'subtitle', label: 'Subtitel', type: 'text', placeholder: 'Alles voor een zorgeloos verblijf.' },
+    ],
+  },
+
+  // Marketplace
+  {
+    type: 'marketplace',
+    variant: 'seller-buyer',
+    label: 'Kopen & verkopen',
+    description: 'Dubbele CTA split voor koper en verkoper (standaard)',
+    fields: [
+      { key: 'sell_title', label: 'Verkopen titel', type: 'text', placeholder: 'Verkopen', group: 'Verkopen' },
+      { key: 'sell_cta', label: 'Verkopen knop', type: 'text', placeholder: 'Advertentie plaatsen', group: 'Verkopen' },
+      { key: 'buy_title', label: 'Kopen titel', type: 'text', placeholder: 'Kopen', group: 'Kopen' },
+      { key: 'buy_cta', label: 'Kopen knop', type: 'text', placeholder: 'Advertenties bekijken', group: 'Kopen' },
+    ],
+  },
+  {
+    type: 'marketplace',
+    variant: 'listings',
+    label: 'Advertentieraster',
+    description: '3-kolom kaarten met tags, prijs en sterren',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Recente advertenties' },
+    ],
+  },
+  {
+    type: 'marketplace',
+    variant: 'search-filters',
+    label: 'Zoeken met filters',
+    description: 'Zijbalk filters + lijstresultaten',
+    fields: [
+      { key: 'cta', label: 'Filter knop', type: 'text', placeholder: 'Filter toepassen' },
+    ],
+  },
+  {
+    type: 'marketplace',
+    variant: 'categories',
+    label: 'Categorieënoverzicht',
+    description: '4x2 categorieveraster',
+    fields: [
+      { key: 'title', label: 'Sectietitel', type: 'text', placeholder: 'Blader per categorie' },
+      { key: 'subtitle', label: 'Subtitel', type: 'text', placeholder: 'Vind wat je zoekt.' },
     ],
   },
 ]
