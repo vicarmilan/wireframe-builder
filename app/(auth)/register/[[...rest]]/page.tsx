@@ -15,7 +15,7 @@ function RegisterForm() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [company, setCompany] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState<string | undefined>('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -24,7 +24,7 @@ function RegisterForm() {
     if (!isLoaded || !ticket || !signUp) return
     // Pre-fill email from ticket
     signUp.create({ strategy: 'ticket', ticket }).then((res) => {
-      setEmail(res.emailAddress ?? '')
+      setEmail(res.emailAddress ?? undefined)
     }).catch(() => {})
   }, [isLoaded, ticket, signUp])
 
