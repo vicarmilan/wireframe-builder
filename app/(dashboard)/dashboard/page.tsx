@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, FolderOpen, MessageSquare, Clock, Pencil } from 'lucide-react'
+import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Users } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Project } from '@/types'
@@ -48,13 +48,22 @@ export default function DashboardPage() {
           </div>
           <span className="font-semibold text-gray-900 text-lg">Vicar Builder</span>
         </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={16} />
-          Nieuw project
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/users"
+            className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <Users size={15} />
+            Gebruikers
+          </Link>
+          <button
+            onClick={() => setShowNew(true)}
+            className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={16} />
+            Nieuw project
+          </button>
+        </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-8 py-10">
