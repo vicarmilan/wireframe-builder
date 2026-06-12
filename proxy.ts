@@ -1,10 +1,11 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 const isPublicRoute = createRouteMatcher([
   '/login(.*)',
   '/register(.*)',
   '/preview/(.*)',
+  '/no-access',
 ])
 
 const isAdminRoute = createRouteMatcher([
@@ -20,14 +21,14 @@ const isAdminRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, request) => {
   if (isPublicRoute(request)) return
 
-  const { userId, sessionClaims } = await auth.protect()
+  const { userId } = await auth.protect()
 
-  // Block clients from admin routes
   if (isAdminRoute(request)) {
-    const role = (sessionClaims?.metadata as Record<string, string> | undefined)?.role
+    const client = await clerkClient()
+    const user = await client.users.getUser(userId)
+    const role = (user.publicMetadata as Record<string, string>)?.role
     if (role !== 'admin') {
-      const url = new URL('/no-access', request.url)
-      return NextResponse.redirect(url)
+      return NextResponse.redirect(new URL('/no-access', request.url))
     }
   }
 })
