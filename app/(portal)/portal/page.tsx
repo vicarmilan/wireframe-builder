@@ -18,8 +18,9 @@ export default function PortalPage() {
 
   useEffect(() => {
     fetch('/api/portal/projects')
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : { projects: [], client: null })
       .then((d) => { setData(d); setLoading(false) })
+      .catch(() => { setData({ projects: [], client: null }); setLoading(false) })
   }, [])
 
   const firstName = user?.firstName || user?.primaryEmailAddress?.emailAddress?.split('@')[0] || ''
