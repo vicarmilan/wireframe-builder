@@ -17,12 +17,7 @@ export async function POST(req: Request) {
   // Check if user already exists
   const existing = await client.users.getUserList({ emailAddress: [email] })
   if (existing.totalCount > 0) {
-    // User exists — just update their role
-    const existingUser = existing.data[0]
-    await client.users.updateUserMetadata(existingUser.id, {
-      publicMetadata: { role: role ?? 'client' },
-    })
-    return NextResponse.json({ ok: true, existing: true })
+    return NextResponse.json({ error: 'Deze gebruiker heeft al een account op het platform.' }, { status: 409 })
   }
 
   try {
