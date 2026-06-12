@@ -2,10 +2,11 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { MessageSquare, X, Send, Check, ArrowLeft, Lock } from 'lucide-react'
+import { MessageSquare, X, Send, Check, ArrowLeft, Lock, Pencil, Trash2 } from 'lucide-react'
 import { useAuth, useUser } from '@clerk/nextjs'
 import { Project, Page, PageComponent, Comment } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
+import OnboardingModal from '@/components/preview/OnboardingModal'
 
 interface FullProject extends Project {
   pages: (Page & { page_components: PageComponent[] })[]
@@ -24,6 +25,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [forbidden, setForbidden] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   const authorName = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.primaryEmailAddress?.emailAddress || '' : ''
   const authorEmail = user?.primaryEmailAddress?.emailAddress || ''
@@ -41,6 +43,23 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         setProject(data)
         setActivePage(data.pages?.[0]?.id || null)
         setLoading(false)
+        // Show onboarding once per browser
+        const seen = localStorage.getItem('vicar_onboarding_seen')
+        if (!seen) setShowOnboarding(true)
+        // Load comments for all pages
+        const allPageIds: string[] = data.pages?.map((p: { id: string }) => p.id) ?? []
+        Promise.all(
+          allPageIds.map((pageId) =>
+            fetch(`/api/comments?page_id=${pageId}`).then((r) => r.ok ? r.json() : [])
+          )
+        ).then((results) => {
+          const grouped: Record<string, Comment[]> = {}
+          results.flat().forEach((c: Comment & { page_components?: { page_id: string } }) => {
+            const cid = c.page_component_id
+            grouped[cid] = [...(grouped[cid] || []), c]
+          })
+          setComments(grouped)
+        })
       })
   }, [token])
 
@@ -59,8 +78,13 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         content: commentText,
       }),
     })
-    const comment = await res.json()
-    setComments((prev) => ({ ...prev, [componentId]: [...(prev[componentId] || []), comment] }))
+    const data = await res.json()
+    if (!res.ok) {
+      console.error('Comment opslaan mislukt:', data.error)
+      alert(`Feedback kon niet worden opgeslagen: ${data.error ?? 'Onbekende fout'}`)
+      return
+    }
+    setComments((prev) => ({ ...prev, [componentId]: [...(prev[componentId] || []), data] }))
     setCommentText('')
     setSubmitted(true)
     setTimeout(() => { setSubmitted(false); setCommenting(null) }, 2000)
@@ -102,8 +126,14 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
     </div>
   )
 
+  function handleOnboardingClose() {
+    localStorage.setItem('vicar_onboarding_seen', '1')
+    setShowOnboarding(false)
+  }
+
   return (
     <div className="min-h-screen bg-[#F0F2F5]">
+      {showOnboarding && <OnboardingModal onClose={handleOnboardingClose} />}
       {/* Preview header */}
       <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
@@ -178,12 +208,19 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
 
         <div className="flex items-center gap-3">
           {user && (
-            <span className="text-xs text-gray-400">{authorName}</span>
+            <span className="text-xs text-gray-400 hidden sm:block">{authorName}</span>
           )}
-          <div className="text-xs text-gray-400 flex items-center gap-1">
+          <div className="text-xs text-gray-400 items-center gap-1 hidden md:flex">
             <MessageSquare size={12} />
             Klik op een sectie om feedback te geven
           </div>
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="w-7 h-7 rounded-full border border-gray-200 text-gray-400 hover:text-[#2563EB] hover:border-blue-300 transition-colors text-xs font-bold flex items-center justify-center"
+            title="Uitleg opnieuw bekijken"
+          >
+            ?
+          </button>
         </div>
       </header>
 
@@ -197,16 +234,30 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
 
             {/* Comment button */}
             <button
-              onClick={() => setCommenting(commenting === component.id ? null : component.id)}
+              onClick={() => {
+                const isOpening = commenting !== component.id
+                setCommenting(isOpening ? component.id : null)
+                if (isOpening) {
+                  // Scroll to panel after state update + render
+                  setTimeout(() => {
+                    document.getElementById(`feedback-panel-${component.id}`)?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'nearest',
+                    })
+                  }, 50)
+                }
+              }}
               className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 shadow-sm rounded-lg px-2.5 py-1.5 text-xs text-gray-600 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
             >
               <MessageSquare size={12} />
-              {comments[component.id]?.length || 0} reacties
+              {comments[component.id]?.length
+                ? `${comments[component.id].length} reactie${comments[component.id].length !== 1 ? 's' : ''}`
+                : 'Feedback geven'}
             </button>
 
             {/* Comment panel */}
             {commenting === component.id && (
-              <div className="mt-2 bg-white rounded-xl border border-gray-100 shadow-lg p-4 space-y-3">
+              <div id={`feedback-panel-${component.id}`} className="mt-2 bg-white rounded-xl border border-gray-100 shadow-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium text-sm text-gray-900">Feedback geven</h4>
@@ -223,15 +274,19 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
                 {comments[component.id]?.length > 0 && (
                   <div className="space-y-2">
                     {comments[component.id].map((c) => (
-                      <div key={c.id} className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">
-                            {c.author_name.charAt(0)}
-                          </div>
-                          <span className="text-xs font-medium text-gray-700">{c.author_name}</span>
-                        </div>
-                        <p className="text-xs text-gray-600">{c.content}</p>
-                      </div>
+                      <CommentItem
+                        key={c.id}
+                        comment={c}
+                        currentEmail={authorEmail}
+                        onDeleted={(id) => setComments((prev) => ({
+                          ...prev,
+                          [component.id]: prev[component.id].filter((x) => x.id !== id),
+                        }))}
+                        onEdited={(updated) => setComments((prev) => ({
+                          ...prev,
+                          [component.id]: prev[component.id].map((x) => x.id === updated.id ? updated : x),
+                        }))}
+                      />
                     ))}
                   </div>
                 )}
@@ -270,6 +325,110 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function CommentItem({
+  comment,
+  currentEmail,
+  onDeleted,
+  onEdited,
+}: {
+  comment: Comment
+  currentEmail: string
+  onDeleted: (id: string) => void
+  onEdited: (updated: Comment) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState(comment.content)
+  const [saving, setSaving] = useState(false)
+  const isOwn = currentEmail && comment.author_email === currentEmail
+
+  async function handleEdit() {
+    if (!editText.trim() || editText === comment.content) { setEditing(false); return }
+    setSaving(true)
+    const res = await fetch('/api/comments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: comment.id, content: editText, author_email: currentEmail }),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      onEdited(updated)
+      setEditing(false)
+    }
+    setSaving(false)
+  }
+
+  async function handleDelete() {
+    if (!confirm('Feedback verwijderen?')) return
+    const res = await fetch(`/api/comments?id=${comment.id}&author_email=${encodeURIComponent(currentEmail)}`, {
+      method: 'DELETE',
+    })
+    if (res.ok) onDeleted(comment.id)
+  }
+
+  return (
+    <div className="bg-gray-50 rounded-lg p-3 group/comment">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold flex-shrink-0">
+            {comment.author_name.charAt(0)}
+          </div>
+          <span className="text-xs font-medium text-gray-700">{comment.author_name}</span>
+          {comment.edited_at && (
+            <span className="text-xs text-gray-400 italic">bewerkt</span>
+          )}
+        </div>
+        {isOwn && !editing && (
+          <div className="flex gap-1 opacity-0 group-hover/comment:opacity-100 transition-opacity">
+            <button
+              onClick={() => { setEditText(comment.content); setEditing(true) }}
+              className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
+              title="Bewerken"
+            >
+              <Pencil size={11} />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+              title="Verwijderen"
+            >
+              <Trash2 size={11} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="mt-1.5 space-y-1.5">
+          <textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            rows={2}
+            className="w-full border border-blue-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            autoFocus
+          />
+          <div className="flex gap-1.5">
+            <button
+              onClick={handleEdit}
+              disabled={saving || !editText.trim()}
+              className="text-xs bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Opslaan...' : 'Opslaan'}
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="text-xs text-gray-500 px-2.5 py-1 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Annuleren
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-gray-600">{comment.content}</p>
+      )}
     </div>
   )
 }
