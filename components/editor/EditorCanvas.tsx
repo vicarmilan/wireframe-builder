@@ -47,16 +47,20 @@ export default function EditorCanvas({
 }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
   const [activeComponent, setActiveComponent] = useState<PageComponent | null>(null)
+  const [activeDragSize, setActiveDragSize] = useState<{ width: number; height: number } | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
   function handleDragStart(event: DragStartEvent) {
     const comp = components.find((c) => c.id === event.active.id)
     if (comp) setActiveComponent(comp)
+    const rect = event.active.rect.current.translated ?? event.active.rect.current.initial
+    if (rect) setActiveDragSize({ width: rect.width, height: rect.height })
   }
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveComponent(null)
+    setActiveDragSize(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
     const oldIndex = components.findIndex((c) => c.id === active.id)
@@ -143,22 +147,26 @@ export default function EditorCanvas({
 
           {/* Scaled drag overlay for reorder */}
           <DragOverlay dropAnimation={null}>
-            {activeComponent ? (
+            {activeComponent && activeDragSize ? (
+              // Outer div: explicit size at 50% — forces DragOverlay to the correct dimensions
               <div
                 style={{
-                  zoom: OVERLAY_SCALE,
+                  width: activeDragSize.width * OVERLAY_SCALE,
+                  height: activeDragSize.height * OVERLAY_SCALE,
                   borderRadius: 12,
                   overflow: 'hidden',
                   boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
-                  background: 'white',
                   pointerEvents: 'none',
                 }}
               >
-                <WireframeComponent
-                  component={activeComponent}
-                  editing={false}
-                  onPropChange={() => {}}
-                />
+                {/* Inner div: zoom scales content + layout to fill the outer box */}
+                <div style={{ zoom: OVERLAY_SCALE, width: activeDragSize.width, height: activeDragSize.height }}>
+                  <WireframeComponent
+                    component={activeComponent}
+                    editing={false}
+                    onPropChange={() => {}}
+                  />
+                </div>
               </div>
             ) : null}
           </DragOverlay>
