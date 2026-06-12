@@ -3,6 +3,7 @@
 import { useState, useEffect, use, useCallback } from 'react'
 import { ArrowLeft, Eye, Layout, Copy, Check } from 'lucide-react'
 import Link from 'next/link'
+import { arrayMove } from '@dnd-kit/sortable'
 import { PageComponent, ComponentDefinition, Project, Page } from '@/types'
 import { useEditorStore } from '@/store/editor'
 import EditorCanvas from '@/components/editor/EditorCanvas'
@@ -57,6 +58,40 @@ export default function PageEditorPage({
     })
     const comp = await res.json()
     addComponent(comp)
+    setSelected(comp.id)
+  }
+
+  async function handleAddAt(def: ComponentDefinition, index: number) {
+    const res = await fetch(`/api/pages/${pageId}/components`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        component_type: def.type,
+        component_variant: def.variant,
+        props: {},
+      }),
+    })
+    const comp = await res.json()
+    // Insert at the right position
+    const currentComponents = useEditorStore.getState().components
+    const newComponents = [...currentComponents, comp]
+    // Move the newly added component to the desired index
+    const from = newComponents.length - 1
+    const to = Math.min(index, newComponents.length - 1)
+    if (from !== to) {
+      const reordered = arrayMove(newComponents, from, to)
+      reorderComponents(reordered)
+      // Persist order
+      await fetch(`/api/pages/${pageId}/components`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reorder: reordered.map((c, i) => ({ id: c.id, order: i })),
+        }),
+      })
+    } else {
+      addComponent(comp)
+    }
     setSelected(comp.id)
   }
 
@@ -158,6 +193,7 @@ export default function PageEditorPage({
           onReorder={handleReorder}
           onPropChange={handlePropChange}
           onAddClick={() => setSidebarOpen(true)}
+          onAddAt={handleAddAt}
         />
 
         {selectedComponent && (

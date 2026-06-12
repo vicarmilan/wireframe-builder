@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useState, useRef } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Plus } from 'lucide-react'
-import { PageComponent } from '@/types'
+import { PageComponent, ComponentDefinition } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
 
 interface Props {
@@ -27,6 +27,7 @@ interface Props {
   onReorder: (components: PageComponent[]) => void
   onPropChange: (id: string, key: string, value: string) => void
   onAddClick: () => void
+  onAddAt: (def: ComponentDefinition, index: number) => void
 }
 
 export default function EditorCanvas({
@@ -36,8 +37,11 @@ export default function EditorCanvas({
   onReorder,
   onPropChange,
   onAddClick,
+  onAddAt,
 }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const [dropIndex, setDropIndex] = useState<number | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -47,24 +51,90 @@ export default function EditorCanvas({
     onReorder(arrayMove(components, oldIndex, newIndex))
   }
 
+  // HTML5 drag handlers for sidebar drops
+  function handleCanvasDragOver(e: React.DragEvent) {
+    if (!e.dataTransfer.types.includes('application/vicar-component')) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    setIsDragOver(true)
+
+    // Calculate drop index based on Y position
+    const target = e.currentTarget as HTMLElement
+    const items = target.querySelectorAll('[data-sortable-item]')
+    let idx = components.length
+    for (let i = 0; i < items.length; i++) {
+      const rect = items[i].getBoundingClientRect()
+      const midY = rect.top + rect.height / 2
+      if (e.clientY < midY) {
+        idx = i
+        break
+      }
+    }
+    setDropIndex(idx)
+  }
+
+  function handleCanvasDragLeave(e: React.DragEvent) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+      setDropIndex(null)
+    }
+  }
+
+  function handleCanvasDrop(e: React.DragEvent) {
+    setIsDragOver(false)
+    setDropIndex(null)
+    const raw = e.dataTransfer.getData('application/vicar-component')
+    if (!raw) return
+    e.preventDefault()
+    try {
+      const def: ComponentDefinition = JSON.parse(raw)
+      const target = e.currentTarget as HTMLElement
+      const items = target.querySelectorAll('[data-sortable-item]')
+      let idx = components.length
+      for (let i = 0; i < items.length; i++) {
+        const rect = items[i].getBoundingClientRect()
+        const midY = rect.top + rect.height / 2
+        if (e.clientY < midY) {
+          idx = i
+          break
+        }
+      }
+      onAddAt(def, idx)
+    } catch {}
+  }
+
   return (
     <div className="flex-1 overflow-y-auto bg-[#F0F2F5]">
-      <div className="max-w-5xl mx-auto py-8 px-6">
+      <div
+        className="max-w-5xl mx-auto py-8 px-6"
+        onDragOver={handleCanvasDragOver}
+        onDragLeave={handleCanvasDragLeave}
+        onDrop={handleCanvasDrop}
+      >
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={components.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {components.map((component) => (
-              <SortableItem
-                key={component.id}
-                component={component}
-                selected={selectedId === component.id}
-                onSelect={() => onSelect(component.id)}
-                onPropChange={(key, value) => onPropChange(component.id, key, value)}
-              />
+            {components.map((component, i) => (
+              <div key={component.id}>
+                {/* Drop indicator above item */}
+                {isDragOver && dropIndex === i && (
+                  <div className="h-1 bg-blue-500 rounded-full mx-2 my-1 opacity-80" />
+                )}
+                <SortableItem
+                  component={component}
+                  selected={selectedId === component.id}
+                  onSelect={() => onSelect(component.id)}
+                  onPropChange={(key, value) => onPropChange(component.id, key, value)}
+                />
+              </div>
             ))}
+            {/* Drop indicator at end */}
+            {isDragOver && dropIndex === components.length && (
+              <div className="h-1 bg-blue-500 rounded-full mx-2 my-1 opacity-80" />
+            )}
           </SortableContext>
         </DndContext>
 
-        {components.length === 0 && (
+        {components.length === 0 && !isDragOver && (
           <div className="text-center py-24 border-2 border-dashed border-gray-200 rounded-2xl bg-white">
             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Plus size={24} className="text-blue-500" />
@@ -77,6 +147,15 @@ export default function EditorCanvas({
             >
               Component toevoegen
             </button>
+          </div>
+        )}
+
+        {components.length === 0 && isDragOver && (
+          <div className="text-center py-24 border-2 border-dashed border-blue-400 rounded-2xl bg-blue-50/50">
+            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Plus size={24} className="text-blue-500" />
+            </div>
+            <p className="text-blue-600 font-medium">Laat los om toe te voegen</p>
           </div>
         )}
       </div>
@@ -109,6 +188,7 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
+      data-sortable-item
       className={`relative group mb-2 rounded-xl overflow-hidden border-2 transition-colors ${
         selected ? 'border-[#2563EB]' : 'border-transparent hover:border-gray-200'
       }`}
