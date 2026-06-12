@@ -1,6 +1,7 @@
 'use client'
 
-import { useSignUp, useClerk } from '@clerk/nextjs/legacy'
+import { useSignUp } from '@clerk/nextjs/legacy'
+import { useClerk } from '@clerk/nextjs'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
