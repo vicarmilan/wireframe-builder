@@ -44,6 +44,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       name: body.name,
       slug: body.slug || body.name.toLowerCase().replace(/\s+/g, '-'),
       order: nextOrder,
+      parent_id: body.parent_id ?? null,
     })
     .select()
     .single()

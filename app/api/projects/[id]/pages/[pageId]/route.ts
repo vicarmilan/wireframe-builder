@@ -17,6 +17,7 @@ export async function PATCH(
   if (body.name !== undefined) allowed.name = body.name
   if (body.slug !== undefined) allowed.slug = body.slug
   if (body.order !== undefined) allowed.order = body.order
+  if ('parent_id' in body) allowed.parent_id = body.parent_id ?? null
 
   const { data, error } = await supabase
     .from('pages')

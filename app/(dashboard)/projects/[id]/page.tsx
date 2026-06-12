@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import {
   ArrowLeft, Plus, FileText, ExternalLink, Copy, Check, Code2,
-  GripVertical, Pencil, Trash2, X, AlertTriangle,
+  GripVertical, Pencil, Trash2, X, AlertTriangle, ChevronRight, ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Project, Page } from '@/types'
@@ -18,12 +18,38 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
+// Build a tree from a flat list
+function buildTree(pages: Page[]): Page[] {
+  const map: Record<string, Page> = {}
+  const roots: Page[] = []
+  for (const p of pages) map[p.id] = { ...p, children: [] }
+  for (const p of pages) {
+    if (p.parent_id && map[p.parent_id]) {
+      map[p.parent_id].children!.push(map[p.id])
+    } else {
+      roots.push(map[p.id])
+    }
+  }
+  return roots
+}
+
+// Flatten tree to ordered list (for sibling reordering)
+function flattenSiblings(pages: Page[]): Page[] {
+  const result: Page[] = []
+  for (const p of pages) {
+    result.push(p)
+    if (p.children?.length) result.push(...flattenSiblings(p.children))
+  }
+  return result
+}
+
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [project, setProject] = useState<Project | null>(null)
   const [pages, setPages] = useState<Page[]>([])
   const [loading, setLoading] = useState(true)
   const [showNewPage, setShowNewPage] = useState(false)
+  const [newPageParent, setNewPageParent] = useState<{ id: string; name: string } | null>(null)
   const [showImport, setShowImport] = useState(false)
   const [copied, setCopied] = useState(false)
   const [editingPage, setEditingPage] = useState<Page | null>(null)
@@ -45,6 +71,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   function onPageCreated(page: Page) {
     setPages((prev) => [...prev, page])
     setShowNewPage(false)
+    setNewPageParent(null)
   }
 
   function onImported(newPages: Page[]) {
@@ -59,13 +86,21 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     setTimeout(() => setCopied(false), 2000)
   }
 
-  async function handleDragEnd(event: DragEndEvent) {
+  async function handleDragEnd(event: DragEndEvent, siblings: Page[], parentId: string | null) {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    const oldIndex = pages.findIndex((p) => p.id === active.id)
-    const newIndex = pages.findIndex((p) => p.id === over.id)
-    const reordered = arrayMove(pages, oldIndex, newIndex)
-    setPages(reordered)
+    const oldIndex = siblings.findIndex((p) => p.id === active.id)
+    const newIndex = siblings.findIndex((p) => p.id === over.id)
+    const reordered = arrayMove(siblings, oldIndex, newIndex)
+    // Update local state: replace only the affected siblings in the flat list
+    setPages((prev) => {
+      const updated = prev.map((p) => {
+        const idx = reordered.findIndex((r) => r.id === p.id)
+        if (idx !== -1) return { ...p, order: idx }
+        return p
+      })
+      return updated
+    })
     await Promise.all(
       reordered.map((p, i) =>
         fetch(`/api/projects/${id}/pages/${p.id}`, {
@@ -75,11 +110,19 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         })
       )
     )
+    void parentId // suppress unused warning
   }
 
   async function handleDeletePage(page: Page) {
     await fetch(`/api/projects/${id}/pages/${page.id}`, { method: 'DELETE' })
-    setPages((prev) => prev.filter((p) => p.id !== page.id))
+    // Remove page and all its descendants
+    const toRemove = new Set<string>()
+    function collectIds(p: Page) {
+      toRemove.add(p.id)
+      pages.filter((c) => c.parent_id === p.id).forEach(collectIds)
+    }
+    collectIds(page)
+    setPages((prev) => prev.filter((p) => !toRemove.has(p.id)))
     setDeletingPage(null)
   }
 
@@ -90,7 +133,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       body: JSON.stringify({ name, slug }),
     })
     const updated = await res.json()
-    setPages((prev) => prev.map((p) => p.id === page.id ? updated : p))
+    setPages((prev) => prev.map((p) => p.id === page.id ? { ...p, ...updated } : p))
     setEditingPage(null)
   }
 
@@ -101,6 +144,8 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       </div>
     )
   }
+
+  const tree = buildTree(pages.slice().sort((a, b) => a.order - b.order))
 
   return (
     <div className="min-h-screen bg-[#F0F2F5]">
@@ -147,7 +192,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
               JSON importeren
             </button>
             <button
-              onClick={() => setShowNewPage(true)}
+              onClick={() => { setNewPageParent(null); setShowNewPage(true) }}
               className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
             >
               <Plus size={16} />
@@ -170,7 +215,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 JSON importeren
               </button>
               <button
-                onClick={() => setShowNewPage(true)}
+                onClick={() => { setNewPageParent(null); setShowNewPage(true) }}
                 className="bg-[#2563EB] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 Pagina toevoegen
@@ -178,26 +223,31 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
         ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
-                {pages.map((page) => (
-                  <SortablePage
-                    key={page.id}
-                    page={page}
-                    projectId={id}
-                    onEdit={() => setEditingPage(page)}
-                    onDelete={() => setDeletingPage(page)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <PageTree
+              pages={tree}
+              allPages={pages}
+              projectId={id}
+              depth={0}
+              sensors={sensors}
+              onDragEnd={handleDragEnd}
+              onEdit={(p) => setEditingPage(p)}
+              onDelete={(p) => setDeletingPage(p)}
+              onAddChild={(p) => { setNewPageParent({ id: p.id, name: p.name }); setShowNewPage(true) }}
+            />
+          </div>
         )}
       </main>
 
       {showNewPage && (
-        <NewPageModal projectId={id} onClose={() => setShowNewPage(false)} onCreated={onPageCreated} />
+        <NewPageModal
+          projectId={id}
+          parentId={newPageParent?.id}
+          parentName={newPageParent?.name}
+          existingPages={pages}
+          onClose={() => { setShowNewPage(false); setNewPageParent(null) }}
+          onCreated={onPageCreated}
+        />
       )}
       {showImport && (
         <ImportPagesModal projectId={id} onClose={() => setShowImport(false)} onImported={onImported} />
@@ -212,6 +262,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       {deletingPage && (
         <DeletePageModal
           page={deletingPage}
+          hasChildren={pages.some((p) => p.parent_id === deletingPage.id)}
           onClose={() => setDeletingPage(null)}
           onConfirm={() => handleDeletePage(deletingPage)}
         />
@@ -220,54 +271,170 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   )
 }
 
-function SortablePage({ page, projectId, onEdit, onDelete }: {
-  page: Page
+// Recursive tree renderer
+function PageTree({
+  pages,
+  allPages,
+  projectId,
+  depth,
+  sensors,
+  onDragEnd,
+  onEdit,
+  onDelete,
+  onAddChild,
+}: {
+  pages: Page[]
+  allPages: Page[]
   projectId: string
-  onEdit: () => void
-  onDelete: () => void
+  depth: number
+  sensors: ReturnType<typeof useSensors>
+  onDragEnd: (event: DragEndEvent, siblings: Page[], parentId: string | null) => void
+  onEdit: (p: Page) => void
+  onDelete: (p: Page) => void
+  onAddChild: (p: Page) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id })
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+  const parentId = pages[0]?.parent_id ?? null
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="flex items-center bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-sm transition-all group"
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={(e) => onDragEnd(e, pages, parentId)}
     >
+      <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        {pages.map((page) => (
+          <PageRow
+            key={page.id}
+            page={page}
+            allPages={allPages}
+            projectId={projectId}
+            depth={depth}
+            sensors={sensors}
+            onDragEnd={onDragEnd}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddChild={onAddChild}
+          />
+        ))}
+      </SortableContext>
+    </DndContext>
+  )
+}
+
+function PageRow({
+  page,
+  allPages,
+  projectId,
+  depth,
+  sensors,
+  onDragEnd,
+  onEdit,
+  onDelete,
+  onAddChild,
+}: {
+  page: Page
+  allPages: Page[]
+  projectId: string
+  depth: number
+  sensors: ReturnType<typeof useSensors>
+  onDragEnd: (event: DragEndEvent, siblings: Page[], parentId: string | null) => void
+  onEdit: (p: Page) => void
+  onDelete: (p: Page) => void
+  onAddChild: (p: Page) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
+  const [expanded, setExpanded] = useState(true)
+  const children = page.children ?? []
+  const hasChildren = children.length > 0
+
+  const indentWidth = depth * 24
+
+  return (
+    <div ref={setNodeRef} style={style}>
       <div
-        {...attributes}
-        {...listeners}
-        className="px-3 py-4 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 transition-colors"
+        className={`flex items-center group border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition-colors ${depth > 0 ? 'border-l-2 border-l-blue-100' : ''}`}
+        style={{ paddingLeft: indentWidth }}
       >
-        <GripVertical size={16} />
-      </div>
-
-      <Link href={`/projects/${projectId}/${page.id}`} className="flex-1 flex items-center gap-3 py-4 pr-4 min-w-0">
-        <FileText size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0" />
-        <div className="min-w-0">
-          <span className="font-medium text-gray-900 block truncate">{page.name}</span>
-          <span className="text-xs text-gray-400">/{page.slug}</span>
+        {/* Drag handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="px-3 py-3.5 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 transition-colors flex-shrink-0"
+        >
+          <GripVertical size={14} />
         </div>
-        <span className="text-xs text-gray-400 ml-auto flex-shrink-0">{formatDate(page.updated_at)}</span>
-      </Link>
 
-      <div className="flex items-center gap-1 pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={(e) => { e.preventDefault(); onEdit() }}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-          title="Naam aanpassen"
+        {/* Expand/collapse toggle */}
+        <div className="w-5 flex-shrink-0">
+          {hasChildren && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </button>
+          )}
+        </div>
+
+        {/* Page link */}
+        <Link
+          href={`/projects/${projectId}/${page.id}`}
+          className="flex-1 flex items-center gap-3 py-3.5 pr-2 min-w-0"
         >
-          <Pencil size={13} />
-        </button>
-        <button
-          onClick={(e) => { e.preventDefault(); onDelete() }}
-          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-          title="Verwijderen"
-        >
-          <Trash2 size={13} />
-        </button>
+          <FileText size={14} className={`flex-shrink-0 transition-colors ${depth > 0 ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-500'}`} />
+          <div className="min-w-0">
+            <span className="font-medium text-sm text-gray-900 block truncate">{page.name}</span>
+            <span className="text-xs text-gray-400">/{page.slug}</span>
+          </div>
+          {hasChildren && (
+            <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full flex-shrink-0">
+              {children.length}
+            </span>
+          )}
+          <span className="text-xs text-gray-400 ml-auto flex-shrink-0 pr-2">{formatDate(page.updated_at)}</span>
+        </Link>
+
+        {/* Actions */}
+        <div className="flex items-center gap-0.5 pr-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          <button
+            onClick={(e) => { e.preventDefault(); onAddChild(page) }}
+            className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
+            title="Subpagina toevoegen"
+          >
+            <Plus size={13} />
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); onEdit(page) }}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            title="Naam aanpassen"
+          >
+            <Pencil size={13} />
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); onDelete(page) }}
+            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+            title="Verwijderen"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
       </div>
+
+      {/* Children */}
+      {hasChildren && expanded && (
+        <PageTree
+          pages={children}
+          allPages={allPages}
+          projectId={projectId}
+          depth={depth + 1}
+          sensors={sensors}
+          onDragEnd={onDragEnd}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAddChild={onAddChild}
+        />
+      )}
     </div>
   )
 }
@@ -334,8 +501,9 @@ function EditPageModal({ page, onClose, onSave }: {
   )
 }
 
-function DeletePageModal({ page, onClose, onConfirm }: {
+function DeletePageModal({ page, hasChildren, onClose, onConfirm }: {
   page: Page
+  hasChildren: boolean
   onClose: () => void
   onConfirm: () => void
 }) {
@@ -350,6 +518,7 @@ function DeletePageModal({ page, onClose, onConfirm }: {
             <p className="font-medium text-red-700 text-sm">Pagina verwijderen?</p>
             <p className="text-red-600 text-sm mt-1">
               <strong>{page.name}</strong> en alle componenten worden permanent verwijderd.
+              {hasChildren && ' Alle subpagina\'s worden ook verwijderd.'}
             </p>
           </div>
         </div>

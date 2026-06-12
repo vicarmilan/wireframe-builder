@@ -26,6 +26,7 @@ export interface Project {
 export interface Page {
   id: string
   project_id: string
+  parent_id: string | null
   name: string
   slug: string
   order: number
@@ -33,6 +34,7 @@ export interface Page {
   updated_at: string
   // computed
   components?: PageComponent[]
+  children?: Page[]
 }
 
 export interface PageComponent {

@@ -19,6 +19,7 @@ create table pages (
   project_id uuid not null references projects(id) on delete cascade,
   name text not null,
   slug text not null,
+  parent_id uuid references pages(id) on delete set null,
   "order" int not null default 0,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),

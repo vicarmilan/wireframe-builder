@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Code2, AlertCircle, FileText, CheckCircle2 } from 'lucide-react'
+import { X, Code2, AlertCircle, FileText, CheckCircle2, ChevronRight } from 'lucide-react'
 import { Page } from '@/types'
 
 interface ImportComponent {
@@ -12,6 +12,8 @@ interface ImportComponent {
 
 interface ImportPage {
   name: string
+  slug?: string
+  parent?: string // slug of parent page
   components: ImportComponent[]
 }
 
@@ -33,11 +35,16 @@ export default function ImportPagesModal({ projectId, onClose, onImported }: Pro
       const pages: ImportPage[] = parsed.pages ?? (Array.isArray(parsed) ? parsed : null)
       if (!pages) throw new Error('JSON moet een object zijn met een "pages" array')
       if (!Array.isArray(pages) || pages.length === 0) throw new Error('"pages" moet een niet-lege array zijn')
+      const slugs = new Set<string>()
       for (const page of pages) {
         if (!page.name) throw new Error('Elke pagina heeft een "name" nodig')
         if (!Array.isArray(page.components)) throw new Error(`Pagina "${page.name}" heeft een "components" array nodig`)
         for (const c of page.components) {
           if (!c.type || !c.variant) throw new Error(`Component in "${page.name}" heeft "type" en "variant" nodig`)
+        }
+        if (page.slug) slugs.add(page.slug)
+        if (page.parent && !slugs.has(page.parent) && !pages.find(p => (p.slug ?? slugToKey(p.name)) === page.parent)) {
+          throw new Error(`Pagina "${page.name}" verwijst naar onbekende parent "${page.parent}"`)
         }
       }
       return pages
@@ -45,6 +52,10 @@ export default function ImportPagesModal({ projectId, onClose, onImported }: Pro
       setError(e instanceof Error ? e.message : 'Ongeldige JSON')
       return null
     }
+  }
+
+  function slugToKey(name: string) {
+    return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   }
 
   function handlePreview() {
@@ -60,19 +71,28 @@ export default function ImportPagesModal({ projectId, onClose, onImported }: Pro
     setError('')
 
     const createdPages: Page[] = []
+    // map from import slug -> created page id
+    const slugToId: Record<string, string> = {}
 
     for (const importPage of pages) {
-      // Pagina aanmaken
+      const key = importPage.slug ?? slugToKey(importPage.name)
+      const parentId = importPage.parent ? slugToId[importPage.parent] ?? null : null
+
       const pageRes = await fetch(`/api/projects/${projectId}/pages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: importPage.name }),
+        body: JSON.stringify({
+          name: importPage.name,
+          slug: importPage.slug,
+          parent_id: parentId,
+        }),
       })
       const page = await pageRes.json()
       if (!pageRes.ok) { setError(`Pagina "${importPage.name}" aanmaken mislukt`); setLoading(false); return }
+
+      slugToId[key] = page.id
       createdPages.push(page)
 
-      // Componenten aanmaken
       if (importPage.components.length > 0) {
         await Promise.all(
           importPage.components.map((c, i) =>
@@ -94,6 +114,50 @@ export default function ImportPagesModal({ projectId, onClose, onImported }: Pro
     onImported(createdPages)
   }
 
+  // Build tree preview for display
+  function buildPreviewTree(pages: ImportPage[]) {
+    const roots: ImportPage[] = []
+    const children: Record<string, ImportPage[]> = {}
+    for (const p of pages) {
+      if (p.parent) {
+        children[p.parent] = children[p.parent] ?? []
+        children[p.parent].push(p)
+      } else {
+        roots.push(p)
+      }
+    }
+    return { roots, children }
+  }
+
+  function PreviewTree({ pages, children, depth = 0 }: { pages: ImportPage[]; children: Record<string, ImportPage[]>; depth?: number }) {
+    return (
+      <>
+        {pages.map((page, i) => {
+          const key = page.slug ?? page.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+          const kids = children[key] ?? []
+          return (
+            <div key={i}>
+              <div
+                className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-gray-50"
+                style={{ marginLeft: depth * 20 }}
+              >
+                {depth > 0 && <ChevronRight size={12} className="text-gray-300 flex-shrink-0" />}
+                <FileText size={13} className="text-[#2563EB] flex-shrink-0" />
+                <span className="font-medium text-sm text-gray-900 flex-1">{page.name}</span>
+                <span className="text-xs text-gray-400">{page.components.length} componenten</span>
+              </div>
+              {kids.length > 0 && (
+                <PreviewTree pages={kids} children={children} depth={depth + 1} />
+              )}
+            </div>
+          )
+        })}
+      </>
+    )
+  }
+
+  const tree = preview ? buildPreviewTree(preview) : null
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
@@ -111,7 +175,7 @@ export default function ImportPagesModal({ projectId, onClose, onImported }: Pro
           {!preview ? (
             <>
               <p className="text-sm text-gray-500">
-                Plak een JSON met meerdere pagina&apos;s en componenten. Vraag Claude om dit te genereren op basis van de klant.
+                Gebruik het <code className="bg-gray-100 px-1 rounded text-xs">parent</code> veld om hiërarchie aan te geven. De waarde is de <code className="bg-gray-100 px-1 rounded text-xs">slug</code> van de bovenliggende pagina.
               </p>
               <textarea
                 value={json}
@@ -119,18 +183,22 @@ export default function ImportPagesModal({ projectId, onClose, onImported }: Pro
                 placeholder={`{
   "pages": [
     {
-      "name": "Homepage",
+      "name": "Menu",
+      "slug": "menu",
       "components": [
-        { "type": "navigation", "variant": "simple", "props": { "logo": "Bedrijfsnaam" } },
-        { "type": "hero", "variant": "centered", "props": { "title": "Welkom" } },
-        { "type": "footer", "variant": "simple", "props": { "logo": "Bedrijfsnaam" } }
+        { "type": "navigation", "variant": "mega", "props": { "logo": "Restaurant" } },
+        { "type": "hero", "variant": "minimal", "props": { "title": "Onze menukaart" } },
+        { "type": "footer", "variant": "simple", "props": { "logo": "Restaurant" } }
       ]
     },
     {
-      "name": "Over ons",
+      "name": "Lunch",
+      "slug": "menu-lunch",
+      "parent": "menu",
       "components": [
-        { "type": "navigation", "variant": "simple", "props": { "logo": "Bedrijfsnaam" } },
-        { "type": "hero", "variant": "minimal", "props": { "title": "Over ons" } }
+        { "type": "navigation", "variant": "mega", "props": { "logo": "Restaurant" } },
+        { "type": "hero", "variant": "minimal", "props": { "title": "Lunchmenu" } },
+        { "type": "footer", "variant": "simple", "props": { "logo": "Restaurant" } }
       ]
     }
   ]
@@ -151,23 +219,8 @@ export default function ImportPagesModal({ projectId, onClose, onImported }: Pro
                 <CheckCircle2 size={15} className="flex-shrink-0" />
                 JSON geldig — {preview.length} pagina{preview.length !== 1 ? "'s" : ''} gevonden
               </div>
-              <div className="space-y-3">
-                {preview.map((page, i) => (
-                  <div key={i} className="border border-gray-100 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText size={14} className="text-[#2563EB]" />
-                      <span className="font-medium text-sm text-gray-900">{page.name}</span>
-                      <span className="text-xs text-gray-400 ml-auto">{page.components.length} componenten</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {page.components.map((c, j) => (
-                        <span key={j} className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                          {c.type}/{c.variant}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className="border border-gray-100 rounded-xl p-2">
+                {tree && <PreviewTree pages={tree.roots} children={tree.children} />}
               </div>
               <button
                 onClick={() => setPreview(null)}

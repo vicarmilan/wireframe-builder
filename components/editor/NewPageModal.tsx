@@ -12,16 +12,20 @@ interface ImportComponent {
 
 interface Props {
   projectId: string
+  parentId?: string | null
+  parentName?: string | null
+  existingPages?: Page[]
   onClose: () => void
   onCreated: (page: Page, components?: ImportComponent[]) => void
 }
 
-export default function NewPageModal({ projectId, onClose, onCreated }: Props) {
+export default function NewPageModal({ projectId, parentId, parentName, existingPages, onClose, onCreated }: Props) {
   const [tab, setTab] = useState<'blank' | 'import'>('blank')
   const [name, setName] = useState('')
   const [json, setJson] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [selectedParentId, setSelectedParentId] = useState<string>(parentId ?? '')
 
   function validateJson(): ImportComponent[] | null {
     try {
@@ -56,7 +60,7 @@ export default function NewPageModal({ projectId, onClose, onCreated }: Props) {
     const res = await fetch(`/api/projects/${projectId}/pages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim() }),
+      body: JSON.stringify({ name: name.trim(), parent_id: selectedParentId || null }),
     })
     const page = await res.json()
     if (!res.ok) { setError(page.error || 'Er ging iets mis'); setLoading(false); return }
@@ -125,6 +129,25 @@ export default function NewPageModal({ projectId, onClose, onCreated }: Props) {
               autoFocus
             />
           </div>
+
+          {existingPages && existingPages.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Bovenliggende pagina (optioneel)</label>
+              <select
+                value={selectedParentId}
+                onChange={(e) => setSelectedParentId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">— Geen (topniveau)</option>
+                {existingPages.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              {parentName && !selectedParentId && (
+                <p className="text-xs text-gray-400 mt-1">Subpagina van: {parentName}</p>
+              )}
+            </div>
+          )}
 
           {tab === 'import' && (
             <div>
