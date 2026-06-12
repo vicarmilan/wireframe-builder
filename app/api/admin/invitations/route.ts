@@ -14,16 +14,28 @@ export async function POST(req: Request) {
   const { email, role } = await req.json()
   if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
+  // Check if user already exists
+  const existing = await client.users.getUserList({ emailAddress: [email] })
+  if (existing.totalCount > 0) {
+    // User exists — just update their role
+    const existingUser = existing.data[0]
+    await client.users.updateUserMetadata(existingUser.id, {
+      publicMetadata: { role: role ?? 'client' },
+    })
+    return NextResponse.json({ ok: true, existing: true })
+  }
+
   try {
     await client.invitations.createInvitation({
       emailAddress: email,
       publicMetadata: { role: role ?? 'client' },
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://vicar-builder.vercel.app'}/dashboard`,
       ignoreExisting: true,
     })
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const clerkErr = err as { errors?: { message: string }[] }
+    const message = clerkErr.errors?.[0]?.message ?? (err instanceof Error ? err.message : 'Onbekende fout')
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

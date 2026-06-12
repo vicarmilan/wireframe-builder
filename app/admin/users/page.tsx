@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
   const [inviteRole, setInviteRole] = useState<'admin' | 'client'>('client')
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
-  const [inviteSuccess, setInviteSuccess] = useState(false)
+  const [inviteSuccess, setInviteSuccess] = useState<false | 'invited' | 'updated'>(false)
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([])
 
   useEffect(() => {
@@ -92,10 +92,11 @@ export default function AdminUsersPage() {
       setInviteError(data.error || 'Er ging iets mis')
       return
     }
-    setInviteSuccess(true)
+    setInviteSuccess(data.existing ? 'updated' : 'invited')
     setInviteEmail('')
+    fetch('/api/admin/users').then((r) => r.json()).then((d) => setUsers(Array.isArray(d) ? d : []))
     fetch('/api/admin/invitations').then((r) => r.json()).then((d) => setPendingInvitations(Array.isArray(d) ? d : []))
-    setTimeout(() => { setInviteSuccess(false); setShowInvite(false) }, 2000)
+    setTimeout(() => { setInviteSuccess(false); setShowInvite(false) }, 2500)
   }
 
   async function revokeInvitation(invitationId: string) {
@@ -173,7 +174,9 @@ export default function AdminUsersPage() {
             </div>
 
             {inviteSuccess ? (
-              <div className="text-center py-6 text-green-600 font-medium">Uitnodiging verstuurd!</div>
+              <div className="text-center py-6 text-green-600 font-medium">
+                {inviteSuccess === 'updated' ? 'Rol bijgewerkt — gebruiker bestaat al.' : 'Uitnodiging verstuurd!'}
+              </div>
             ) : (
               <div className="space-y-4">
                 <div>
