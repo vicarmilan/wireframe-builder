@@ -2,7 +2,8 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { MessageSquare, X, Send, Check } from 'lucide-react'
+import { MessageSquare, X, Send, Check, ArrowLeft } from 'lucide-react'
+import { useAuth } from '@clerk/nextjs'
 import { Project, Page, PageComponent, Comment } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
 
@@ -12,6 +13,7 @@ interface FullProject extends Project {
 
 export default function PreviewPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
+  const { isSignedIn } = useAuth()
   const [project, setProject] = useState<FullProject | null>(null)
   const [activePage, setActivePage] = useState<string | null>(null)
   const [commenting, setCommenting] = useState<string | null>(null)
@@ -79,6 +81,15 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
       {/* Preview header */}
       <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
+          {isSignedIn && (
+            <Link
+              href="/dashboard"
+              className="text-gray-400 hover:text-gray-600 transition-colors mr-1"
+              title="Terug naar dashboard"
+            >
+              <ArrowLeft size={18} />
+            </Link>
+          )}
           <div className="w-7 h-7 bg-[#2563EB] rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-xs">V</span>
           </div>
