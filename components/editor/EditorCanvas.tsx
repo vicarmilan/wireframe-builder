@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
@@ -19,6 +21,8 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Plus } from 'lucide-react'
 import { PageComponent, ComponentDefinition } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
+
+const OVERLAY_SCALE = 0.5
 
 interface Props {
   components: PageComponent[]
@@ -42,10 +46,17 @@ export default function EditorCanvas({
   justDroppedId,
 }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const [activeComponent, setActiveComponent] = useState<PageComponent | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
+  function handleDragStart(event: DragStartEvent) {
+    const comp = components.find((c) => c.id === event.active.id)
+    if (comp) setActiveComponent(comp)
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveComponent(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
     const oldIndex = components.findIndex((c) => c.id === active.id)
@@ -59,18 +70,12 @@ export default function EditorCanvas({
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
     setIsDragOver(true)
-
-    // Calculate drop index based on Y position
     const target = e.currentTarget as HTMLElement
     const items = target.querySelectorAll('[data-sortable-item]')
     let idx = components.length
     for (let i = 0; i < items.length; i++) {
       const rect = items[i].getBoundingClientRect()
-      const midY = rect.top + rect.height / 2
-      if (e.clientY < midY) {
-        idx = i
-        break
-      }
+      if (e.clientY < rect.top + rect.height / 2) { idx = i; break }
     }
     setDropIndex(idx)
   }
@@ -95,11 +100,7 @@ export default function EditorCanvas({
       let idx = components.length
       for (let i = 0; i < items.length; i++) {
         const rect = items[i].getBoundingClientRect()
-        const midY = rect.top + rect.height / 2
-        if (e.clientY < midY) {
-          idx = i
-          break
-        }
+        if (e.clientY < rect.top + rect.height / 2) { idx = i; break }
       }
       onAddAt(def, idx)
     } catch {}
@@ -113,13 +114,17 @@ export default function EditorCanvas({
         onDragLeave={handleCanvasDragLeave}
         onDrop={handleCanvasDrop}
       >
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
           <SortableContext items={components.map((c) => c.id)} strategy={verticalListSortingStrategy}>
             {components.map((component, i) => (
               <div key={component.id}>
-                {/* Drop indicator above item */}
                 {isDragOver && dropIndex === i && (
-                  <div className="h-1 bg-blue-500 rounded-full mx-2 my-1 opacity-80" />
+                  <div className="h-1 bg-blue-500 rounded-full mx-2 my-1" />
                 )}
                 <SortableItem
                   component={component}
@@ -127,14 +132,38 @@ export default function EditorCanvas({
                   onSelect={() => onSelect(component.id)}
                   onPropChange={(key, value) => onPropChange(component.id, key, value)}
                   isNew={justDroppedId === component.id}
+                  isDragging={activeComponent?.id === component.id}
                 />
               </div>
             ))}
-            {/* Drop indicator at end */}
             {isDragOver && dropIndex === components.length && (
-              <div className="h-1 bg-blue-500 rounded-full mx-2 my-1 opacity-80" />
+              <div className="h-1 bg-blue-500 rounded-full mx-2 my-1" />
             )}
           </SortableContext>
+
+          {/* Scaled drag overlay for reorder */}
+          <DragOverlay dropAnimation={null}>
+            {activeComponent ? (
+              <div
+                style={{
+                  width: `${100 / OVERLAY_SCALE}%`,
+                  transform: `scale(${OVERLAY_SCALE})`,
+                  transformOrigin: 'top left',
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
+                  background: 'white',
+                  pointerEvents: 'none',
+                }}
+              >
+                <WireframeComponent
+                  component={activeComponent}
+                  editing={false}
+                  onPropChange={() => {}}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
 
         {components.length === 0 && !isDragOver && (
@@ -172,20 +201,34 @@ function SortableItem({
   onSelect,
   onPropChange,
   isNew,
+  isDragging,
 }: {
   component: PageComponent
   selected: boolean
   onSelect: () => void
   onPropChange: (key: string, value: string) => void
   isNew?: boolean
+  isDragging?: boolean
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: component.id,
   })
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging ? transition : undefined,
+    transition,
+  }
+
+  if (isDragging) {
+    // Placeholder where the item was — subtle outline, no content shown
+    return (
+      <div
+        ref={setNodeRef}
+        style={{ ...style, minHeight: 80 }}
+        data-sortable-item
+        className="mb-2 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/60"
+      />
+    )
   }
 
   return (
@@ -198,7 +241,6 @@ function SortableItem({
       } ${isNew ? 'animate-drop-in' : ''}`}
       onClick={onSelect}
     >
-      {/* Drag handle */}
       <div
         {...attributes}
         {...listeners}
