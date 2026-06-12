@@ -12,7 +12,7 @@ import NewPageModal from '@/components/editor/NewPageModal'
 import ImportPagesModal from '@/components/editor/ImportPagesModal'
 import {
   DndContext, DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent,
-  PointerSensor, useSensor, useSensors, closestCenter, DragOverlay, Active,
+  PointerSensor, useSensor, useSensors, closestCenter, DragOverlay,
 } from '@dnd-kit/core'
 import {
   SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
@@ -156,25 +156,34 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   }
 
   async function handleDragEnd({ active, over }: DragEndEvent) {
+    const currentOffset = offsetLeftRef.current
+    offsetLeftRef.current = 0
     setActiveId(null)
     setOverId(null)
     setOffsetLeft(0)
 
-    if (!over || active.id === over.id) return
+    if (!over) return
 
     const tree = buildTree(pages.slice().sort((a, b) => a.order - b.order))
     const flat = flattenTree(tree)
-    const projection = getProjection(flat, active.id as string, over.id as string, offsetLeftRef.current)
+    const projection = getProjection(flat, active.id as string, over.id as string, currentOffset)
     if (!projection) return
+
+    const activePage = pages.find((p) => p.id === active.id)
+    if (!activePage) return
+
+    // Skip if nothing changed
+    const samePosition = active.id === over.id
+    const sameParent = (activePage.parent_id ?? null) === (projection.parentId ?? null)
+    const depthChange = projection.depth !== flat.find((p) => p.id === active.id)?.depth
+    if (samePosition && sameParent && !depthChange) return
 
     const activeIndex = flat.findIndex((i) => i.id === active.id)
     const overIndex = flat.findIndex((i) => i.id === over.id)
-    const newFlat = arrayMove(flat, activeIndex, overIndex)
+    const newFlat = active.id === over.id
+      ? flat // same row: order within parent doesn't change, only parent_id changes
+      : arrayMove(flat, activeIndex, overIndex)
 
-    // Compute new sibling order within the new parent
-    const newSiblings = newFlat.filter(
-      (p) => p.id !== active.id && (p.parent_id ?? null) === (projection.parentId ?? null)
-    )
     const insertIndex = newFlat.findIndex((p) => p.id === active.id)
     const siblingsBeforeInsert = newFlat
       .slice(0, insertIndex)
@@ -195,30 +204,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ parent_id: projection.parentId, order: newOrder }),
     })
-
-    // Re-order existing siblings if needed
-    const affectedSiblings = pages
-      .filter((p) => p.id !== active.id && (p.parent_id ?? null) === (projection.parentId ?? null))
-      .sort((a, b) => a.order - b.order)
-
-    const reordered = [
-      ...affectedSiblings.slice(0, newOrder),
-      { id: active.id as string },
-      ...affectedSiblings.slice(newOrder),
-    ]
-    await Promise.all(
-      reordered.map((p, i) =>
-        p.id !== active.id
-          ? fetch(`/api/projects/${id}/pages/${p.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ order: i }),
-            })
-          : Promise.resolve()
-      )
-    )
-
-    void newSiblings
   }
 
   async function handleDeletePage(page: Page) {
