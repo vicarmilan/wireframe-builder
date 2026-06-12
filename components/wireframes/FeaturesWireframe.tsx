@@ -1,27 +1,31 @@
-import { WireframeProps, Ph, ImgPh, IconPh, Section } from './shared'
+import { WireframeProps, Ph, ImgPh, IconPh, Section, Tx } from './shared'
 
-export default function FeaturesWireframe({ props, variant }: WireframeProps) {
+export default function FeaturesWireframe({ props, variant, editing, onPropChange }: WireframeProps) {
   if (variant === 'list-split') {
     return (
       <Section>
         <div className="grid grid-cols-2 gap-12 items-center">
           <div className="space-y-4">
-            {props.title ? (
-              <h2 className="text-4xl font-bold text-gray-900">{props.title}</h2>
-            ) : (
-              <div className="space-y-2">
-                <Ph w="w-full" h="h-6" />
-                <Ph w="w-4/5" h="h-6" />
-              </div>
-            )}
-            {props.subtitle ? (
-              <p className="text-gray-500">{props.subtitle}</p>
-            ) : (
-              <div className="space-y-2">
-                <Ph h="h-3" />
-                <Ph w="w-5/6" h="h-3" />
-              </div>
-            )}
+            <Tx
+              value={props.title}
+              fieldKey="title"
+              placeholder="Alles wat je nodig hebt"
+              editing={editing}
+              onPropChange={onPropChange}
+              className="text-4xl font-bold text-gray-900"
+              barWidth="w-full"
+              multiline={true}
+            />
+            <Tx
+              value={props.subtitle}
+              fieldKey="subtitle"
+              placeholder="Een korte beschrijving van je aanbod."
+              editing={editing}
+              onPropChange={onPropChange}
+              className="text-gray-500"
+              barWidth="w-full"
+              multiline={true}
+            />
             <div className="space-y-3 pt-2">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="flex gap-3 items-start">
@@ -41,30 +45,44 @@ export default function FeaturesWireframe({ props, variant }: WireframeProps) {
     return (
       <Section>
         <div className="text-center mb-12">
-          {props.title ? (
-            <h2 className="text-3xl font-bold text-gray-900">{props.title}</h2>
-          ) : <Ph w="w-48 mx-auto" h="h-6" />}
+          <Tx
+            value={props.title}
+            fieldKey="title"
+            placeholder="Hoe het werkt"
+            editing={editing}
+            onPropChange={onPropChange}
+            className="text-3xl font-bold text-gray-900"
+            barWidth="w-48"
+          />
         </div>
         <div className="space-y-16">
           {[
-            { titleKey: 'f1_title', descKey: 'f1_desc' },
-            { titleKey: 'f2_title', descKey: 'f2_desc' },
-          ].map(({ titleKey, descKey }, i) => (
+            { titleKey: 'f1_title', descKey: 'f1_desc', titlePlaceholder: 'Stap 1', descPlaceholder: 'Beschrijving van stap 1.' },
+            { titleKey: 'f2_title', descKey: 'f2_desc', titlePlaceholder: 'Stap 2', descPlaceholder: 'Beschrijving van stap 2.' },
+          ].map(({ titleKey, descKey, titlePlaceholder, descPlaceholder }, i) => (
             <div key={i} className={`grid grid-cols-2 gap-12 items-center ${i % 2 === 1 ? '' : ''}`}>
               {i % 2 === 0 ? (
                 <>
                   <div className="space-y-3">
-                    {props[titleKey] ? (
-                      <h3 className="text-2xl font-bold text-gray-900">{props[titleKey]}</h3>
-                    ) : <Ph w="w-48" h="h-5" />}
-                    {props[descKey] ? (
-                      <p className="text-gray-500">{props[descKey]}</p>
-                    ) : (
-                      <div className="space-y-2">
-                        <Ph h="h-3" />
-                        <Ph w="w-5/6" h="h-3" />
-                      </div>
-                    )}
+                    <Tx
+                      value={props[titleKey]}
+                      fieldKey={titleKey}
+                      placeholder={titlePlaceholder}
+                      editing={editing}
+                      onPropChange={onPropChange}
+                      className="text-2xl font-bold text-gray-900"
+                      barWidth="w-48"
+                    />
+                    <Tx
+                      value={props[descKey]}
+                      fieldKey={descKey}
+                      placeholder={descPlaceholder}
+                      editing={editing}
+                      onPropChange={onPropChange}
+                      className="text-gray-500"
+                      barWidth="w-full"
+                      multiline={true}
+                    />
                   </div>
                   <ImgPh />
                 </>
@@ -72,17 +90,25 @@ export default function FeaturesWireframe({ props, variant }: WireframeProps) {
                 <>
                   <ImgPh />
                   <div className="space-y-3">
-                    {props[titleKey] ? (
-                      <h3 className="text-2xl font-bold text-gray-900">{props[titleKey]}</h3>
-                    ) : <Ph w="w-48" h="h-5" />}
-                    {props[descKey] ? (
-                      <p className="text-gray-500">{props[descKey]}</p>
-                    ) : (
-                      <div className="space-y-2">
-                        <Ph h="h-3" />
-                        <Ph w="w-5/6" h="h-3" />
-                      </div>
-                    )}
+                    <Tx
+                      value={props[titleKey]}
+                      fieldKey={titleKey}
+                      placeholder={titlePlaceholder}
+                      editing={editing}
+                      onPropChange={onPropChange}
+                      className="text-2xl font-bold text-gray-900"
+                      barWidth="w-48"
+                    />
+                    <Tx
+                      value={props[descKey]}
+                      fieldKey={descKey}
+                      placeholder={descPlaceholder}
+                      editing={editing}
+                      onPropChange={onPropChange}
+                      className="text-gray-500"
+                      barWidth="w-full"
+                      multiline={true}
+                    />
                   </div>
                 </>
               )}
@@ -97,30 +123,43 @@ export default function FeaturesWireframe({ props, variant }: WireframeProps) {
   return (
     <Section>
       <div className="text-center mb-12">
-        {props.title ? (
-          <h2 className="text-3xl font-bold text-gray-900">{props.title}</h2>
-        ) : <Ph w="w-64 mx-auto" h="h-6" />}
+        <Tx
+          value={props.title}
+          fieldKey="title"
+          placeholder="Waarom kiezen voor ons?"
+          editing={editing}
+          onPropChange={onPropChange}
+          className="text-3xl font-bold text-gray-900"
+          barWidth="w-64"
+        />
       </div>
       <div className="grid grid-cols-3 gap-8">
         {[
-          { titleKey: 'f1_title', descKey: 'f1_desc' },
-          { titleKey: 'f2_title', descKey: 'f2_desc' },
-          { titleKey: 'f3_title', descKey: 'f3_desc' },
-        ].map(({ titleKey, descKey }, i) => (
+          { titleKey: 'f1_title', descKey: 'f1_desc', titlePh: 'Snel & betrouwbaar', descPh: 'Korte omschrijving van deze feature.' },
+          { titleKey: 'f2_title', descKey: 'f2_desc', titlePh: 'Eenvoudig te gebruiken', descPh: 'Korte omschrijving van deze feature.' },
+          { titleKey: 'f3_title', descKey: 'f3_desc', titlePh: 'Altijd beschikbaar', descPh: 'Korte omschrijving van deze feature.' },
+        ].map(({ titleKey, descKey, titlePh, descPh }, i) => (
           <div key={i} className="space-y-3">
             <IconPh />
-            {props[titleKey] ? (
-              <h3 className="font-semibold text-gray-900">{props[titleKey]}</h3>
-            ) : <Ph w="w-32" h="h-4" />}
-            {props[descKey] ? (
-              <p className="text-sm text-gray-500">{props[descKey]}</p>
-            ) : (
-              <div className="space-y-2">
-                <Ph h="h-2.5" />
-                <Ph w="w-5/6" h="h-2.5" />
-                <Ph w="w-4/6" h="h-2.5" />
-              </div>
-            )}
+            <Tx
+              value={props[titleKey]}
+              fieldKey={titleKey}
+              placeholder={titlePh}
+              editing={editing}
+              onPropChange={onPropChange}
+              className="font-semibold text-gray-900"
+              barWidth="w-32"
+            />
+            <Tx
+              value={props[descKey]}
+              fieldKey={descKey}
+              placeholder={descPh}
+              editing={editing}
+              onPropChange={onPropChange}
+              className="text-sm text-gray-500"
+              barWidth="w-full"
+              multiline={true}
+            />
           </div>
         ))}
       </div>

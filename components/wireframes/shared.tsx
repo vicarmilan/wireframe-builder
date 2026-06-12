@@ -50,28 +50,30 @@ export function Tx({
   barWidth?: string
   multiline?: boolean
 }) {
-  if (value) {
-    if (editing) {
-      if (multiline) {
-        return (
-          <textarea
-            value={value}
-            onChange={(e) => onPropChange(fieldKey, e.target.value)}
-            className={`bg-transparent border border-blue-300 rounded px-1 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 ${className}`}
-            rows={3}
-          />
-        )
-      }
+  if (editing) {
+    if (multiline) {
       return (
-        <input
-          value={value}
+        <textarea
+          value={value ?? ''}
           onChange={(e) => onPropChange(fieldKey, e.target.value)}
-          className={`bg-transparent border border-blue-300 rounded px-1 focus:outline-none focus:ring-2 focus:ring-blue-400 ${className}`}
+          placeholder={placeholder}
+          className={`bg-transparent border border-blue-300 rounded px-1 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-gray-400 w-full ${className}`}
+          rows={3}
+          onClick={(e) => e.stopPropagation()}
         />
       )
     }
-    return <span className={className}>{value}</span>
+    return (
+      <input
+        value={value ?? ''}
+        onChange={(e) => onPropChange(fieldKey, e.target.value)}
+        placeholder={placeholder}
+        className={`bg-transparent border border-blue-300 rounded px-1 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-gray-400 min-w-0 ${className}`}
+        onClick={(e) => e.stopPropagation()}
+      />
+    )
   }
+  if (value) return <span className={className}>{value}</span>
   return <Ph w={barWidth} />
 }
 

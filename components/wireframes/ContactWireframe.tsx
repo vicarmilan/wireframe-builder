@@ -1,4 +1,4 @@
-import { WireframeProps, Ph, BtnPh, Section } from './shared'
+import { WireframeProps, Ph, BtnPh, Section, Tx } from './shared'
 
 function InputPh({ label }: { label?: string }) {
   return (
@@ -9,15 +9,21 @@ function InputPh({ label }: { label?: string }) {
   )
 }
 
-export default function ContactWireframe({ props, variant }: WireframeProps) {
+export default function ContactWireframe({ props, variant, editing, onPropChange }: WireframeProps) {
   if (variant === 'centered') {
     return (
       <Section>
         <div className="max-w-lg mx-auto space-y-6">
           <div className="text-center">
-            {props.title ? (
-              <h2 className="text-3xl font-bold text-gray-900">{props.title}</h2>
-            ) : <Ph w="w-48 mx-auto" h="h-6" />}
+            <Tx
+              value={props.title}
+              fieldKey="title"
+              placeholder="Stuur een bericht"
+              editing={editing}
+              onPropChange={onPropChange}
+              className="text-3xl font-bold text-gray-900"
+              barWidth="w-48"
+            />
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -41,32 +47,42 @@ export default function ContactWireframe({ props, variant }: WireframeProps) {
     <Section>
       <div className="grid grid-cols-2 gap-12 items-start">
         <div className="space-y-5">
-          {props.title ? (
-            <h2 className="text-3xl font-bold text-gray-900">{props.title}</h2>
-          ) : (
-            <div className="space-y-2">
-              <Ph w="w-3/4" h="h-6" />
-            </div>
-          )}
-          {props.subtitle ? (
-            <p className="text-gray-500">{props.subtitle}</p>
-          ) : (
-            <div className="space-y-2">
-              <Ph h="h-3" />
-              <Ph w="w-4/5" h="h-3" />
-            </div>
-          )}
+          <Tx
+            value={props.title}
+            fieldKey="title"
+            placeholder="Neem contact op"
+            editing={editing}
+            onPropChange={onPropChange}
+            className="text-3xl font-bold text-gray-900"
+            barWidth="w-3/4"
+          />
+          <Tx
+            value={props.subtitle}
+            fieldKey="subtitle"
+            placeholder="We horen graag van je."
+            editing={editing}
+            onPropChange={onPropChange}
+            className="text-gray-500"
+            barWidth="w-full"
+            multiline={true}
+          />
           <div className="space-y-3 pt-2">
             {[
-              { icon: '✉', value: props.email },
-              { icon: '📞', value: props.phone },
-              { icon: '📍', value: props.address },
-            ].map(({ icon, value }, i) => (
+              { icon: '✉', valueKey: 'email', placeholder: 'info@bedrijf.be' },
+              { icon: '📞', valueKey: 'phone', placeholder: '+32 000 00 00 00' },
+              { icon: '📍', valueKey: 'address', placeholder: 'Brussel, België' },
+            ].map(({ icon, valueKey, placeholder }, i) => (
               <div key={i} className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-sm">{icon}</div>
-                {value ? (
-                  <span className="text-sm text-gray-600">{value}</span>
-                ) : <Ph w="w-36" h="h-2.5" />}
+                <Tx
+                  value={props[valueKey]}
+                  fieldKey={valueKey}
+                  placeholder={placeholder}
+                  editing={editing}
+                  onPropChange={onPropChange}
+                  className="text-sm text-gray-600"
+                  barWidth="w-36"
+                />
               </div>
             ))}
           </div>

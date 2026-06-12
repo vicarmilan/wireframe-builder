@@ -1,6 +1,6 @@
-import { WireframeProps, Ph, LogoPh } from './shared'
+import { WireframeProps, Ph, LogoPh, Tx } from './shared'
 
-export default function FooterWireframe({ props, variant }: WireframeProps) {
+export default function FooterWireframe({ props, variant, editing, onPropChange }: WireframeProps) {
   if (variant === 'multi-column') {
     return (
       <footer className="bg-gray-900 py-12 px-8">
@@ -8,14 +8,16 @@ export default function FooterWireframe({ props, variant }: WireframeProps) {
           <div className="grid grid-cols-5 gap-8 mb-8">
             <div className="col-span-2 space-y-3">
               <LogoPh text={props.logo} />
-              {props.tagline ? (
-                <p className="text-gray-400 text-sm">{props.tagline}</p>
-              ) : (
-                <div className="space-y-2">
-                  <Ph w="w-full" h="h-2.5" className="bg-white/10" />
-                  <Ph w="w-4/5" h="h-2.5" className="bg-white/10" />
-                </div>
-              )}
+              <Tx
+                value={props.tagline}
+                fieldKey="tagline"
+                placeholder="Jouw omschrijving hier"
+                editing={editing}
+                onPropChange={onPropChange}
+                className="text-gray-400 text-sm"
+                barWidth="w-full"
+                multiline={true}
+              />
             </div>
             {[...Array(3)].map((_, col) => (
               <div key={col} className="space-y-3">
@@ -27,9 +29,15 @@ export default function FooterWireframe({ props, variant }: WireframeProps) {
             ))}
           </div>
           <div className="border-t border-white/10 pt-6 flex items-center justify-between">
-            {props.copyright ? (
-              <span className="text-gray-400 text-xs">{props.copyright}</span>
-            ) : <Ph w="w-48" h="h-2.5" className="bg-white/10" />}
+            <Tx
+              value={props.copyright}
+              fieldKey="copyright"
+              placeholder="© 2025 Bedrijfsnaam."
+              editing={editing}
+              onPropChange={onPropChange}
+              className="text-gray-400 text-xs"
+              barWidth="w-48"
+            />
             <div className="flex gap-3">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="w-7 h-7 bg-white/10 rounded-full" />
@@ -49,9 +57,15 @@ export default function FooterWireframe({ props, variant }: WireframeProps) {
         <div className="flex gap-6">
           {[...Array(5)].map((_, i) => <Ph key={i} w="w-12" h="h-2.5" />)}
         </div>
-        {props.copyright ? (
-          <span className="text-xs text-gray-400">{props.copyright}</span>
-        ) : <Ph w="w-40" h="h-2.5" />}
+        <Tx
+          value={props.copyright}
+          fieldKey="copyright"
+          placeholder="© 2025 Bedrijfsnaam. Alle rechten voorbehouden."
+          editing={editing}
+          onPropChange={onPropChange}
+          className="text-xs text-gray-400"
+          barWidth="w-40"
+        />
       </div>
     </footer>
   )

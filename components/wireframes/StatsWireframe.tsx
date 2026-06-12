@@ -1,24 +1,36 @@
-import { WireframeProps, Ph, Section } from './shared'
+import { WireframeProps, Section, Tx } from './shared'
 
-export default function StatsWireframe({ props }: WireframeProps) {
+export default function StatsWireframe({ props, variant, editing, onPropChange }: WireframeProps) {
   const stats = [
-    { num: props.s1_num, label: props.s1_label },
-    { num: props.s2_num, label: props.s2_label },
-    { num: props.s3_num, label: props.s3_label },
-    { num: props.s4_num, label: props.s4_label },
+    { numKey: 's1_num', labelKey: 's1_label', numPh: '10.000+', labelPh: 'Klanten' },
+    { numKey: 's2_num', labelKey: 's2_label', numPh: '99%', labelPh: 'Tevredenheid' },
+    { numKey: 's3_num', labelKey: 's3_label', numPh: '50+', labelPh: 'Landen' },
+    { numKey: 's4_num', labelKey: 's4_label', numPh: '24/7', labelPh: 'Support' },
   ]
 
   return (
     <Section>
       <div className="grid grid-cols-4 gap-8 text-center">
-        {stats.map((stat, i) => (
+        {stats.map(({ numKey, labelKey, numPh, labelPh }, i) => (
           <div key={i} className="space-y-2">
-            {stat.num ? (
-              <div className="text-4xl font-black text-[#2563EB]">{stat.num}</div>
-            ) : <Ph w="w-20 mx-auto" h="h-8" />}
-            {stat.label ? (
-              <div className="text-sm text-gray-500">{stat.label}</div>
-            ) : <Ph w="w-16 mx-auto" h="h-2.5" />}
+            <Tx
+              value={props[numKey]}
+              fieldKey={numKey}
+              placeholder={numPh}
+              editing={editing}
+              onPropChange={onPropChange}
+              className="text-4xl font-black text-[#2563EB]"
+              barWidth="w-20"
+            />
+            <Tx
+              value={props[labelKey]}
+              fieldKey={labelKey}
+              placeholder={labelPh}
+              editing={editing}
+              onPropChange={onPropChange}
+              className="text-sm text-gray-500"
+              barWidth="w-16"
+            />
           </div>
         ))}
       </div>

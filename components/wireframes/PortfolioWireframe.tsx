@@ -1,33 +1,51 @@
-import { WireframeProps, Ph, ImgPh, Section } from './shared'
+import { WireframeProps, Ph, ImgPh, Section, Tx } from './shared'
 
-export default function PortfolioWireframe({ props }: WireframeProps) {
+export default function PortfolioWireframe({ props, variant, editing, onPropChange }: WireframeProps) {
   const projects = [
-    { title: props.p1_title, cat: props.p1_cat },
-    { title: props.p2_title, cat: props.p2_cat },
-    { title: props.p3_title, cat: props.p3_cat },
+    { titleKey: 'p1_title', catKey: 'p1_cat', titlePh: 'Project naam', catPh: 'Webdesign' },
+    { titleKey: 'p2_title', catKey: 'p2_cat', titlePh: 'Project naam', catPh: 'Branding' },
+    { titleKey: 'p3_title', catKey: 'p3_cat', titlePh: 'Project naam', catPh: 'Development' },
   ]
 
   return (
     <Section>
       <div className="flex items-center justify-between mb-10">
-        {props.title ? (
-          <h2 className="text-3xl font-bold text-gray-900">{props.title}</h2>
-        ) : <Ph w="w-32" h="h-6" />}
+        <Tx
+          value={props.title}
+          fieldKey="title"
+          placeholder="Ons werk"
+          editing={editing}
+          onPropChange={onPropChange}
+          className="text-3xl font-bold text-gray-900"
+          barWidth="w-32"
+        />
         <div className="flex gap-2">
           {[...Array(4)].map((_, i) => <Ph key={i} w="w-16" h="h-7" className="rounded-full" />)}
         </div>
       </div>
       <div className="grid grid-cols-3 gap-6">
-        {projects.map((p, i) => (
+        {projects.map(({ titleKey, catKey, titlePh, catPh }, i) => (
           <div key={i} className="group cursor-pointer">
             <ImgPh aspect="aspect-[4/3]" className="mb-3" />
             <div className="space-y-1">
-              {p.cat ? (
-                <div className="text-xs text-[#2563EB] font-medium">{p.cat}</div>
-              ) : <Ph w="w-16" h="h-2.5" />}
-              {p.title ? (
-                <div className="font-semibold text-gray-900">{p.title}</div>
-              ) : <Ph w="w-32" h="h-3.5" />}
+              <Tx
+                value={props[catKey]}
+                fieldKey={catKey}
+                placeholder={catPh}
+                editing={editing}
+                onPropChange={onPropChange}
+                className="text-xs text-[#2563EB] font-medium"
+                barWidth="w-16"
+              />
+              <Tx
+                value={props[titleKey]}
+                fieldKey={titleKey}
+                placeholder={titlePh}
+                editing={editing}
+                onPropChange={onPropChange}
+                className="font-semibold text-gray-900"
+                barWidth="w-32"
+              />
             </div>
           </div>
         ))}
