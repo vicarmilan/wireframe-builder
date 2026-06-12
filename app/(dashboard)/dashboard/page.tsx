@@ -1,16 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, FolderOpen, MessageSquare, Clock } from 'lucide-react'
+import { Plus, FolderOpen, MessageSquare, Clock, Pencil } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Project } from '@/types'
 import { formatDate } from '@/lib/utils'
 import NewProjectModal from '@/components/editor/NewProjectModal'
+import EditProjectModal from '@/components/editor/EditProjectModal'
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [showNew, setShowNew] = useState(false)
+  const [editProject, setEditProject] = useState<Project | null>(null)
 
   useEffect(() => {
     fetch('/api/projects')
@@ -24,6 +27,16 @@ export default function DashboardPage() {
   function onCreated(project: Project) {
     setProjects((prev) => [project, ...prev])
     setShowNew(false)
+  }
+
+  function onUpdated(updated: Project) {
+    setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+    setEditProject(null)
+  }
+
+  function onDeleted(id: string) {
+    setProjects((prev) => prev.filter((p) => p.id !== id))
+    setEditProject(null)
   }
 
   return (
@@ -69,7 +82,11 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onEdit={() => setEditProject(project)}
+              />
             ))}
             <button
               onClick={() => setShowNew(true)}
@@ -83,35 +100,62 @@ export default function DashboardPage() {
       </main>
 
       {showNew && <NewProjectModal onClose={() => setShowNew(false)} onCreated={onCreated} />}
+      {editProject && (
+        <EditProjectModal
+          project={editProject}
+          onClose={() => setEditProject(null)}
+          onUpdated={onUpdated}
+          onDeleted={() => onDeleted(editProject.id)}
+        />
+      )}
     </div>
   )
 }
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({ project, onEdit }: { project: Project; onEdit: () => void }) {
   return (
-    <Link
-      href={`/projects/${project.id}`}
-      className="bg-white rounded-xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group"
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 font-bold text-lg group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-          {project.client_name.charAt(0).toUpperCase()}
+    <div className="relative bg-white rounded-xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group">
+      <button
+        onClick={(e) => { e.preventDefault(); onEdit() }}
+        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+        title="Bewerken"
+      >
+        <Pencil size={14} />
+      </button>
+
+      <Link href={`/projects/${project.id}`} className="block">
+        <div className="flex items-start mb-4">
+          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-100">
+            {project.logo_url ? (
+              <Image
+                src={project.logo_url}
+                alt={project.client_name}
+                width={40}
+                height={40}
+                className="w-full h-full object-contain p-0.5"
+              />
+            ) : (
+              <span className="text-gray-400 font-bold text-lg group-hover:text-blue-600 transition-colors">
+                {project.client_name.charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-      <h3 className="font-semibold text-gray-900 mb-1">{project.name}</h3>
-      <p className="text-sm text-gray-500 mb-4">{project.client_name}</p>
-      <div className="flex items-center gap-4 text-xs text-gray-400">
-        <span className="flex items-center gap-1">
-          <Clock size={12} />
-          {formatDate(project.updated_at)}
-        </span>
-        {project.unread_comments ? (
-          <span className="flex items-center gap-1 text-orange-500">
-            <MessageSquare size={12} />
-            {project.unread_comments} reacties
+        <h3 className="font-semibold text-gray-900 mb-1">{project.name}</h3>
+        <p className="text-sm text-gray-500 mb-4">{project.client_name}</p>
+        <div className="flex items-center gap-4 text-xs text-gray-400">
+          <span className="flex items-center gap-1">
+            <Clock size={12} />
+            {formatDate(project.updated_at)}
           </span>
-        ) : null}
-      </div>
-    </Link>
+          {project.unread_comments ? (
+            <span className="flex items-center gap-1 text-orange-500">
+              <MessageSquare size={12} />
+              {project.unread_comments} reacties
+            </span>
+          ) : null}
+        </div>
+      </Link>
+    </div>
   )
 }
