@@ -41,7 +41,7 @@ export default function PortalPage() {
               {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.primaryEmailAddress?.emailAddress}
             </span>
           )}
-          <UserButton afterSignOutUrl="/login" />
+          <UserButton />
         </div>
       </header>
 
