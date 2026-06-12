@@ -158,7 +158,7 @@ export default function AdminUsersPage() {
   )
 
   const admins = filtered.filter((u) => u.role === 'admin')
-  const clients = filtered.filter((u) => u.role === 'client')
+  const clientUsers = filtered.filter((u) => u.role === 'client')
 
   return (
     <div className="min-h-screen bg-[#F0F2F5]">
@@ -310,13 +310,13 @@ export default function AdminUsersPage() {
             <Section
               title="Klanten"
               icon={<User size={15} className="text-gray-500" />}
-              count={clients.length}
+              count={clientUsers.length}
               description="Kunnen enkel preview links bekijken en feedback geven."
             >
-              {clients.map((user) => (
+              {clientUsers.map((user) => (
                 <UserRow key={user.id} user={user} updating={updating === user.id} onSetRole={setRole} onDelete={deleteUser} />
               ))}
-              {clients.length === 0 && <EmptyRow label="Geen klanten gevonden" />}
+              {clientUsers.length === 0 && <EmptyRow label="Geen klanten gevonden" />}
             </Section>
 
             {pendingInvitations.length > 0 && (
