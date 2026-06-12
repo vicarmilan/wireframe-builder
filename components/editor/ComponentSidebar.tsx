@@ -33,7 +33,7 @@ export default function ComponentSidebar({ onAdd }: Props) {
   const [search, setSearch] = useState('')
   const [activeType, setActiveType] = useState<ComponentType | null>(null)
   const [preview, setPreview] = useState<{ def: ComponentDefinition; y: number } | null>(null)
-  const [dragDef, setDragDef] = useState<ComponentDefinition | null>(null)
+  const [hoveredDef, setHoveredDef] = useState<ComponentDefinition | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dragGhostRef = useRef<HTMLDivElement>(null)
 
@@ -62,25 +62,15 @@ export default function ComponentSidebar({ onAdd }: Props) {
     e.dataTransfer.setData('application/vicar-component', JSON.stringify(def))
     e.dataTransfer.effectAllowed = 'copy'
     setPreview(null)
-    setDragDef(def)
 
-    // Use the hidden ghost element as drag image
+    // Ghost is already rendered (set on mouseEnter), call setDragImage synchronously
     if (dragGhostRef.current) {
-      // Small delay to let React render the dragDef into the ghost
-      requestAnimationFrame(() => {
-        if (dragGhostRef.current) {
-          e.dataTransfer.setDragImage(
-            dragGhostRef.current,
-            dragGhostRef.current.offsetWidth / 2,
-            30
-          )
-        }
-      })
+      e.dataTransfer.setDragImage(
+        dragGhostRef.current,
+        dragGhostRef.current.offsetWidth / 2,
+        30
+      )
     }
-  }
-
-  function handleDragEnd() {
-    setDragDef(null)
   }
 
   return (
@@ -156,10 +146,10 @@ export default function ComponentSidebar({ onAdd }: Props) {
                       key={`${def.type}-${def.variant}`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, def)}
-                      onDragEnd={handleDragEnd}
                       onMouseEnter={(e) => {
                         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                         showPreview(def, rect.top)
+                        setHoveredDef(def)
                       }}
                       onMouseLeave={hidePreview}
                       onClick={() => onAdd(def)}
@@ -204,7 +194,7 @@ export default function ComponentSidebar({ onAdd }: Props) {
           boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
         }}
       >
-        {dragDef && (
+        {hoveredDef && (
           <div
             style={{
               width: PREVIEW_WIDTH,
@@ -213,7 +203,7 @@ export default function ComponentSidebar({ onAdd }: Props) {
             }}
           >
             <WireframeComponent
-              component={makePreviewComponent(dragDef)}
+              component={makePreviewComponent(hoveredDef)}
               editing={false}
               onPropChange={() => {}}
             />
