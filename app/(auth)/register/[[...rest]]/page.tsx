@@ -1,12 +1,13 @@
 'use client'
 
-import { useSignUp } from '@clerk/nextjs/legacy'
+import { useSignUp, useClerk } from '@clerk/nextjs/legacy'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 
 function RegisterForm() {
   const { isLoaded, signUp, setActive } = useSignUp()
+  const { signOut, session } = useClerk()
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -21,9 +22,12 @@ function RegisterForm() {
 
   useEffect(() => {
     if (!isLoaded || !ticket || !signUp) return
-    // Pre-fill email from ticket
-    signUp.create({ strategy: 'ticket', ticket }).catch(() => {})
-  }, [isLoaded, ticket, signUp])
+    const init = async () => {
+      if (session) await signOut()
+      signUp.create({ strategy: 'ticket', ticket }).catch(() => {})
+    }
+    init()
+  }, [isLoaded, ticket]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!ticket) {
     return (
