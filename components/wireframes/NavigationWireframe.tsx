@@ -1,6 +1,6 @@
 import { WireframeProps, Ph, LogoPh, BtnPh } from './shared'
 
-export default function NavigationWireframe({ props, variant }: WireframeProps) {
+export default function NavigationWireframe({ props, variant, editing, onPropChange }: WireframeProps) {
   if (variant === 'centered') {
     return (
       <nav className="bg-white border-b border-gray-100 px-8 py-4">
@@ -27,7 +27,7 @@ export default function NavigationWireframe({ props, variant }: WireframeProps) 
               </div>
             ))}
           </div>
-          <BtnPh text={props.cta} />
+          <BtnPh text={props.cta} editing={editing} fieldKey="cta" onPropChange={onPropChange} />
         </div>
       </nav>
     )

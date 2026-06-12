@@ -53,8 +53,11 @@ export default function PricingWireframe({ props, variant, editing, onPropChange
               ))}
             </div>
             <BtnPh
-              text={featured ? 'Aan de slag' : 'Selecteren'}
+              text={props[`p${i + 1}_cta`] || (featured ? 'Aan de slag' : 'Selecteren')}
               className={featured ? 'bg-white text-[#2563EB] w-full justify-center' : 'w-full justify-center'}
+              editing={editing}
+              fieldKey={`p${i + 1}_cta`}
+              onPropChange={onPropChange}
             />
           </div>
         ))}

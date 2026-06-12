@@ -14,7 +14,7 @@ export default function CtaWireframe({ props, variant, editing, onPropChange }: 
             className="text-white font-bold text-xl"
             barWidth="w-64"
           />
-          <BtnPh text={props.cta} className="bg-white text-[#2563EB]" />
+          <BtnPh text={props.cta} className="bg-white text-[#2563EB]" editing={editing} fieldKey="cta" onPropChange={onPropChange} />
         </div>
       </section>
     )
@@ -44,8 +44,8 @@ export default function CtaWireframe({ props, variant, editing, onPropChange }: 
           barWidth="w-64"
         />
         <div className="flex gap-3 justify-center">
-          <BtnPh text={props.cta_primary} />
-          <BtnOutlinePh text={props.cta_secondary} />
+          <BtnPh text={props.cta_primary} editing={editing} fieldKey="cta_primary" onPropChange={onPropChange} />
+          <BtnOutlinePh text={props.cta_secondary} editing={editing} fieldKey="cta_secondary" onPropChange={onPropChange} />
         </div>
       </div>
     </section>

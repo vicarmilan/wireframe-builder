@@ -78,7 +78,26 @@ export function Tx({
 }
 
 // Blue button placeholder
-export function BtnPh({ text, className = '' }: { text?: string; className?: string }) {
+export function BtnPh({ text, className = '', editing, fieldKey, onPropChange }: {
+  text?: string
+  className?: string
+  editing?: boolean
+  fieldKey?: string
+  onPropChange?: (k: string, v: string) => void
+}) {
+  if (editing && fieldKey && onPropChange) {
+    return (
+      <div className={`inline-flex items-center justify-center bg-[#2563EB] text-white text-xs font-medium px-4 py-2 rounded ${className}`}>
+        <input
+          value={text ?? ''}
+          onChange={(e) => onPropChange(fieldKey, e.target.value)}
+          placeholder="Knoptekst"
+          className="bg-transparent text-white placeholder:text-white/60 focus:outline-none text-center w-24 min-w-0"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )
+  }
   return (
     <div className={`inline-flex items-center justify-center bg-[#2563EB] text-white text-xs font-medium px-4 py-2 rounded ${className}`}>
       {text || <Ph w="w-16" h="h-3" className="bg-white/50" />}
@@ -87,7 +106,26 @@ export function BtnPh({ text, className = '' }: { text?: string; className?: str
 }
 
 // Outline button placeholder
-export function BtnOutlinePh({ text, className = '' }: { text?: string; className?: string }) {
+export function BtnOutlinePh({ text, className = '', editing, fieldKey, onPropChange }: {
+  text?: string
+  className?: string
+  editing?: boolean
+  fieldKey?: string
+  onPropChange?: (k: string, v: string) => void
+}) {
+  if (editing && fieldKey && onPropChange) {
+    return (
+      <div className={`inline-flex items-center justify-center border border-[#C8CFD8] text-gray-500 text-xs font-medium px-4 py-2 rounded ${className}`}>
+        <input
+          value={text ?? ''}
+          onChange={(e) => onPropChange(fieldKey, e.target.value)}
+          placeholder="Knoptekst"
+          className="bg-transparent text-gray-500 placeholder:text-gray-400 focus:outline-none text-center w-24 min-w-0"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )
+  }
   return (
     <div className={`inline-flex items-center justify-center border border-[#C8CFD8] text-gray-500 text-xs font-medium px-4 py-2 rounded ${className}`}>
       {text || <Ph w="w-16" h="h-3" />}

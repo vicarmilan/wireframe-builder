@@ -29,8 +29,8 @@ export default function HeroWireframe({ props, variant, editing, onPropChange }:
               multiline={true}
             />
             <div className="flex gap-3">
-              <BtnPh text={props.cta_primary} />
-              <BtnOutlinePh text={props.cta_secondary} />
+              <BtnPh text={props.cta_primary} editing={editing} fieldKey="cta_primary" onPropChange={onPropChange} />
+              <BtnOutlinePh text={props.cta_secondary} editing={editing} fieldKey="cta_secondary" onPropChange={onPropChange} />
             </div>
           </div>
           <ImgPh aspect="aspect-[4/3]" />
@@ -80,7 +80,7 @@ export default function HeroWireframe({ props, variant, editing, onPropChange }:
             barWidth="w-full"
             multiline={true}
           />
-          <BtnPh text={props.cta_primary} />
+          <BtnPh text={props.cta_primary} editing={editing} fieldKey="cta_primary" onPropChange={onPropChange} />
         </div>
       </Section>
     )
@@ -118,8 +118,8 @@ export default function HeroWireframe({ props, variant, editing, onPropChange }:
           multiline={true}
         />
         <div className="flex gap-3 justify-center">
-          <BtnPh text={props.cta_primary} />
-          <BtnOutlinePh text={props.cta_secondary} />
+          <BtnPh text={props.cta_primary} editing={editing} fieldKey="cta_primary" onPropChange={onPropChange} />
+          <BtnOutlinePh text={props.cta_secondary} editing={editing} fieldKey="cta_secondary" onPropChange={onPropChange} />
         </div>
         <div className="pt-4">
           <ImgPh aspect="aspect-video" className="max-w-2xl mx-auto" />

@@ -35,7 +35,7 @@ export default function ContactWireframe({ props, variant, editing, onPropChange
               <div className="text-xs font-medium text-gray-600">Bericht</div>
               <div className="h-28 bg-gray-100 rounded-lg border border-gray-200" />
             </div>
-            <BtnPh text={props.cta || 'Versturen'} className="w-full justify-center" />
+            <BtnPh text={props.cta || 'Versturen'} className="w-full justify-center" editing={editing} fieldKey="cta" onPropChange={onPropChange} />
           </div>
         </div>
       </Section>
@@ -97,7 +97,7 @@ export default function ContactWireframe({ props, variant, editing, onPropChange
             <div className="text-xs font-medium text-gray-600">Bericht</div>
             <div className="h-24 bg-white rounded-lg border border-gray-200" />
           </div>
-          <BtnPh text="Versturen" className="w-full justify-center" />
+          <BtnPh text={props.cta || 'Versturen'} className="w-full justify-center" editing={editing} fieldKey="cta" onPropChange={onPropChange} />
         </div>
       </div>
     </Section>
