@@ -94,35 +94,47 @@ export default function ComponentSidebar({ onAdd }: Props) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {/* Category list */}
-          {!search && !activeType && (
-            <div className="p-3 space-y-0.5">
-              {COMPONENT_CATEGORIES.map((cat) => {
-                const IconComp = (Icons as unknown as Record<string, React.ElementType>)[cat.icon]
-                return (
-                  <button
-                    key={cat.type}
-                    onClick={() => setActiveType(cat.type)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  >
-                    {IconComp && <IconComp size={15} />}
-                    {cat.label}
-                    <span className="ml-auto text-xs text-gray-400">
-                      {getComponentsByType(cat.type).length}
-                    </span>
-                    <Icons.ChevronRight size={13} className="text-gray-300 -ml-1" />
-                  </button>
-                )
-              })}
+        {/* Sliding panels container */}
+        <div className="flex-1 overflow-hidden relative">
+          <div
+            className="flex h-full"
+            style={{
+              width: '200%',
+              transform: activeType && !search ? 'translateX(-50%)' : 'translateX(0)',
+              transition: 'transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          >
+            {/* Panel 1: Categories */}
+            <div className="w-1/2 h-full overflow-y-auto flex flex-col">
+              <div className="p-3 space-y-0.5">
+                {COMPONENT_CATEGORIES.map((cat) => {
+                  const IconComp = (Icons as unknown as Record<string, React.ElementType>)[cat.icon]
+                  return (
+                    <button
+                      key={cat.type}
+                      onClick={() => setActiveType(cat.type)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    >
+                      {IconComp && <IconComp size={15} />}
+                      {cat.label}
+                      <span className="ml-auto text-xs text-gray-400">
+                        {getComponentsByType(cat.type).length}
+                      </span>
+                      <Icons.ChevronRight size={13} className="text-gray-300 -ml-1" />
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="px-4 py-6 text-center border-t border-gray-50 mt-1">
+                <p className="text-xs text-gray-400">Klik een categorie om te bladeren,<br />of sleep een component naar het canvas</p>
+              </div>
             </div>
-          )}
 
-          {/* Component list (submenu) */}
-          {(search || activeType) && (
-            <div>
-              {!search && activeType && (
-                <div className="flex items-center gap-1 px-3 pt-3 pb-2 border-b border-gray-50 sticky top-0 bg-white z-10">
+            {/* Panel 2: Component list (submenu) */}
+            <div className="w-1/2 h-full overflow-y-auto flex flex-col">
+              {/* Back button header */}
+              {activeType && (
+                <div className="flex items-center gap-1 px-3 pt-3 pb-2 border-b border-gray-100 sticky top-0 bg-white z-10 flex-shrink-0">
                   <button
                     onClick={() => { setActiveType(null); setPreview(null) }}
                     className="flex items-center gap-1 text-gray-500 hover:text-gray-900 text-sm transition-colors"
@@ -131,12 +143,11 @@ export default function ComponentSidebar({ onAdd }: Props) {
                     Terug
                   </button>
                   <span className="mx-2 text-gray-200">|</span>
-                  <span className="text-sm font-medium text-gray-800">
+                  <span className="text-sm font-medium text-gray-800 truncate">
                     {COMPONENT_CATEGORIES.find((c) => c.type === activeType)?.label}
                   </span>
                 </div>
               )}
-
               <div className="p-3 space-y-1.5">
                 {searchResults.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-8">Geen resultaten</p>
@@ -167,11 +178,40 @@ export default function ComponentSidebar({ onAdd }: Props) {
                 )}
               </div>
             </div>
-          )}
+          </div>
 
-          {!search && !activeType && (
-            <div className="px-4 py-6 text-center border-t border-gray-50 mt-1">
-              <p className="text-xs text-gray-400">Klik een categorie om te bladeren,<br />of sleep een component naar het canvas</p>
+          {/* Search results overlay (full width, shown on top when searching) */}
+          {search && (
+            <div className="absolute inset-0 bg-white overflow-y-auto z-20">
+              <div className="p-3 space-y-1.5">
+                {searchResults.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-8">Geen resultaten</p>
+                ) : (
+                  searchResults.map((def) => (
+                    <div
+                      key={`search-${def.type}-${def.variant}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, def)}
+                      onMouseEnter={(e) => {
+                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                        showPreview(def, rect.top)
+                        setHoveredDef(def)
+                      }}
+                      onMouseLeave={hidePreview}
+                      onClick={() => onAdd(def)}
+                      className="w-full text-left p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all group cursor-grab active:cursor-grabbing select-none"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icons.GripVertical size={12} className="text-gray-300 group-hover:text-blue-400 flex-shrink-0" />
+                        <div>
+                          <div className="font-medium text-sm text-gray-800 group-hover:text-blue-700">{def.label}</div>
+                          <div className="text-xs text-gray-400 mt-0.5 leading-snug">{def.description}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           )}
         </div>
