@@ -40,3 +40,13 @@ body {
 [draggable='true'].dragging {
   opacity: 1 !important;
 }
+
+@keyframes dragShrink {
+  from { transform: scale(1); }
+  to   { transform: scale(0.5); }
+}
+
+.drag-overlay-shrink {
+  animation: dragShrink 0.22s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+  transform-origin: top left;
+}

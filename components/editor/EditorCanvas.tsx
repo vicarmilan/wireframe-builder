@@ -146,22 +146,23 @@ export default function EditorCanvas({
 
           <DragOverlay dropAnimation={null}>
             {activeComponent ? (
-              // Outer: explicit half-width so the overlay container is the right size
-              <div style={{
-                width: (activeDragWidth ?? 800) * 0.5,
-                overflow: 'hidden',
-                borderRadius: 12,
-                boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
-                pointerEvents: 'none',
-              }}>
-                {/* Inner: zoom scales content + its layout to match the outer width */}
-                <div style={{ zoom: 0.5, width: activeDragWidth ?? 800 }}>
-                  <WireframeComponent
-                    component={activeComponent}
-                    editing={false}
-                    onPropChange={() => {}}
-                  />
-                </div>
+              <div
+                className="drag-overlay-shrink"
+                style={{
+                  width: activeDragWidth ?? 800,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+                  background: 'white',
+                  pointerEvents: 'none',
+                  transformOrigin: 'top left',
+                }}
+              >
+                <WireframeComponent
+                  component={activeComponent}
+                  editing={false}
+                  onPropChange={() => {}}
+                />
               </div>
             ) : null}
           </DragOverlay>
