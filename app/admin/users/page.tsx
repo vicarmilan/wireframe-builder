@@ -5,6 +5,39 @@ import { ArrowLeft, Shield, User, Search } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
+function UserAvatar({ user }: { user: ClerkUser }) {
+  const initials = user.name
+    ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
+    : user.email[0].toUpperCase()
+
+  const colors = ['bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700', 'bg-green-100 text-green-700', 'bg-orange-100 text-orange-700', 'bg-pink-100 text-pink-700']
+  const color = colors[user.email.charCodeAt(0) % colors.length]
+
+  if (!user.imageUrl || user.imageUrl.includes('gravatar')) {
+    return (
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${color}`}>
+        {initials}
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 relative">
+      <Image
+        src={user.imageUrl}
+        alt={user.name || user.email}
+        width={32}
+        height={32}
+        className="w-full h-full object-cover"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+      />
+      <div className={`absolute inset-0 flex items-center justify-center text-xs font-semibold ${color}`}>
+        {initials}
+      </div>
+    </div>
+  )
+}
+
 interface ClerkUser {
   id: string
   email: string
@@ -135,9 +168,7 @@ function UserRow({ user, updating, onSetRole }: {
 }) {
   return (
     <div className="flex items-center gap-4 px-5 py-3.5">
-      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
-        <Image src={user.imageUrl} alt="" width={32} height={32} className="w-full h-full object-cover" />
-      </div>
+      <UserAvatar user={user} />
       <div className="flex-1 min-w-0">
         <div className="font-medium text-sm text-gray-900 truncate">{user.name || '—'}</div>
         <div className="text-xs text-gray-400 truncate">{user.email}</div>
