@@ -1,18 +1,20 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { ArrowLeft, Plus, FileText, ExternalLink, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Plus, FileText, ExternalLink, Copy, Check, Code2 } from 'lucide-react'
 import Link from 'next/link'
 import { Project, Page } from '@/types'
 import { formatDate } from '@/lib/utils'
 import NewPageModal from '@/components/editor/NewPageModal'
+import ImportPagesModal from '@/components/editor/ImportPagesModal'
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [project, setProject] = useState<Project | null>(null)
   const [pages, setPages] = useState<Page[]>([])
   const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
+  const [showNewPage, setShowNewPage] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -28,7 +30,12 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
 
   function onPageCreated(page: Page) {
     setPages((prev) => [...prev, page])
-    setShowModal(false)
+    setShowNewPage(false)
+  }
+
+  function onImported(newPages: Page[]) {
+    setPages((prev) => [...prev, ...newPages])
+    setShowImport(false)
   }
 
   function copyPreviewLink() {
@@ -82,13 +89,22 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       <main className="max-w-4xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Pagina&apos;s</h2>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            <Plus size={16} />
-            Pagina toevoegen
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              <Code2 size={15} />
+              JSON importeren
+            </button>
+            <button
+              onClick={() => setShowNewPage(true)}
+              className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={16} />
+              Pagina toevoegen
+            </button>
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -113,23 +129,39 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             <div className="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
               <FileText size={36} className="mx-auto text-gray-300 mb-3" />
               <p className="text-gray-500 font-medium">Nog geen pagina&apos;s</p>
-              <p className="text-gray-400 text-sm mt-1">Voeg je eerste pagina toe</p>
-              <button
-                onClick={() => setShowModal(true)}
-                className="mt-5 bg-[#2563EB] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-              >
-                Pagina toevoegen
-              </button>
+              <p className="text-gray-400 text-sm mt-1">Voeg een pagina toe of importeer via JSON</p>
+              <div className="flex items-center justify-center gap-3 mt-5">
+                <button
+                  onClick={() => setShowImport(true)}
+                  className="border border-gray-200 text-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+                >
+                  <Code2 size={14} />
+                  JSON importeren
+                </button>
+                <button
+                  onClick={() => setShowNewPage(true)}
+                  className="bg-[#2563EB] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Pagina toevoegen
+                </button>
+              </div>
             </div>
           )}
         </div>
       </main>
 
-      {showModal && (
+      {showNewPage && (
         <NewPageModal
           projectId={id}
-          onClose={() => setShowModal(false)}
+          onClose={() => setShowNewPage(false)}
           onCreated={onPageCreated}
+        />
+      )}
+      {showImport && (
+        <ImportPagesModal
+          projectId={id}
+          onClose={() => setShowImport(false)}
+          onImported={onImported}
         />
       )}
     </div>
