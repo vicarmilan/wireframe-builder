@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   '/login(.*)',
   '/register(.*)',
   '/no-access',
+  '/sso-callback(.*)',
 ])
 
 const isAdminRoute = createRouteMatcher([
@@ -17,18 +18,28 @@ const isAdminRoute = createRouteMatcher([
   '/api/admin(.*)',
 ])
 
+const isPortalRoute = createRouteMatcher([
+  '/portal(.*)',
+  '/api/portal(.*)',
+])
+
 export default clerkMiddleware(async (auth, request) => {
   if (isPublicRoute(request)) return
 
   const { userId } = await auth.protect()
 
-  if (isAdminRoute(request)) {
-    const client = await clerkClient()
-    const user = await client.users.getUser(userId)
-    const role = (user.publicMetadata as Record<string, string>)?.role
-    if (role !== 'admin') {
-      return NextResponse.redirect(new URL('/no-access', request.url))
-    }
+  const clerk = await clerkClient()
+  const user = await clerk.users.getUser(userId)
+  const role = (user.publicMetadata as Record<string, string>)?.role ?? 'client'
+
+  // Clients trying to access admin routes → redirect to portal
+  if (isAdminRoute(request) && role !== 'admin') {
+    return NextResponse.redirect(new URL('/portal', request.url))
+  }
+
+  // Non-clients/non-admins trying to access portal → redirect to dashboard
+  if (isPortalRoute(request) && role === 'admin') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 })
 

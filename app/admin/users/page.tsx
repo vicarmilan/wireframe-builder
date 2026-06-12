@@ -55,6 +55,11 @@ interface Invitation {
   createdAt: number
 }
 
+interface ClientRecord {
+  id: string
+  name: string
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<ClerkUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,10 +68,13 @@ export default function AdminUsersPage() {
   const [showInvite, setShowInvite] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'admin' | 'client'>('client')
+  const [inviteClientId, setInviteClientId] = useState<string>('new')
+  const [inviteNewClientName, setInviteNewClientName] = useState('')
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
   const [inviteSuccess, setInviteSuccess] = useState(false)
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([])
+  const [clients, setClients] = useState<ClientRecord[]>([])
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -75,6 +83,9 @@ export default function AdminUsersPage() {
     fetch('/api/admin/invitations')
       .then((r) => r.json())
       .then((data) => { setPendingInvitations(Array.isArray(data) ? data : []) })
+    fetch('/api/admin/clients')
+      .then((r) => r.json())
+      .then((data) => { setClients(Array.isArray(data) ? data : []) })
   }, [])
 
   async function sendInvitation() {
@@ -84,7 +95,12 @@ export default function AdminUsersPage() {
     const res = await fetch('/api/admin/invitations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+      body: JSON.stringify({
+        email: inviteEmail.trim(),
+        role: inviteRole,
+        clientId: inviteRole === 'client' ? (inviteClientId === 'new' ? null : inviteClientId) : null,
+        newClientName: inviteRole === 'client' && inviteClientId === 'new' ? inviteNewClientName.trim() : null,
+      }),
     })
     const data = await res.json()
     setInviting(false)
@@ -96,7 +112,14 @@ export default function AdminUsersPage() {
     setInviteEmail('')
     fetch('/api/admin/users').then((r) => r.json()).then((d) => setUsers(Array.isArray(d) ? d : []))
     fetch('/api/admin/invitations').then((r) => r.json()).then((d) => setPendingInvitations(Array.isArray(d) ? d : []))
-    setTimeout(() => { setInviteSuccess(false); setShowInvite(false) }, 2500)
+    fetch('/api/admin/clients').then((r) => r.json()).then((d) => setClients(Array.isArray(d) ? d : []))
+    setTimeout(() => {
+      setInviteSuccess(false)
+      setShowInvite(false)
+      setInviteEmail('')
+      setInviteNewClientName('')
+      setInviteClientId('new')
+    }, 2500)
   }
 
   async function revokeInvitation(invitationId: string) {
@@ -221,10 +244,35 @@ export default function AdminUsersPage() {
                   </div>
                   <p className="text-xs text-gray-400 mt-1.5">
                     {inviteRole === 'client'
-                      ? 'Kan enkel previews bekijken waarvoor ze zijn uitgenodigd.'
+                      ? 'Krijgt toegang tot het klantportaal met hun projecten.'
                       : 'Heeft toegang tot het volledige dashboard.'}
                   </p>
                 </div>
+
+                {inviteRole === 'client' && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Klant / Bedrijf</label>
+                    <select
+                      value={inviteClientId}
+                      onChange={(e) => setInviteClientId(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="new">+ Nieuwe klant aanmaken</option>
+                      {clients.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    {inviteClientId === 'new' && (
+                      <input
+                        value={inviteNewClientName}
+                        onChange={(e) => setInviteNewClientName(e.target.value)}
+                        placeholder="Bedrijfsnaam"
+                        className="w-full mt-2 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    )}
+                  </div>
+                )}
+
                 {inviteError && <p className="text-xs text-red-500">{inviteError}</p>}
                 <button
                   onClick={sendInvitation}

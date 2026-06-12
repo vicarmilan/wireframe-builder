@@ -67,7 +67,8 @@ function RegisterForm() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        router.push('/dashboard')
+        await fetch('/api/portal/setup', { method: 'POST' })
+        router.push('/portal')
       } else {
         setError('Er ging iets mis. Probeer opnieuw.')
       }

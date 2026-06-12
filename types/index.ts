@@ -1,5 +1,18 @@
 export type UserRole = 'admin' | 'client'
 
+export interface Client {
+  id: string
+  name: string
+  created_at: string
+}
+
+export interface ClientUser {
+  id: string
+  client_id: string
+  user_id: string
+  created_at: string
+}
+
 export interface Profile {
   id: string
   email: string

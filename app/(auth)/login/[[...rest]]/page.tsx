@@ -1,12 +1,14 @@
 'use client'
 
 import { useSignIn } from '@clerk/nextjs/legacy'
+import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import Link from 'next/link'
 
 export default function LoginPage() {
   const { isLoaded, signIn, setActive } = useSignIn()
+  const { user } = useUser()
   const router = useRouter()
 
   const [email, setEmail] = useState('')
@@ -28,7 +30,8 @@ export default function LoginPage() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        router.push('/dashboard')
+        const role = (user?.publicMetadata as Record<string, string>)?.role
+        router.push(role === 'admin' ? '/dashboard' : '/portal')
       } else {
         setError('Inloggen mislukt. Probeer opnieuw.')
       }
