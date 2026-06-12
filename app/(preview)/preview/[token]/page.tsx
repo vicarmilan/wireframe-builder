@@ -250,9 +250,12 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
               className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 shadow-sm rounded-lg px-2.5 py-1.5 text-xs text-gray-600 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
             >
               <MessageSquare size={12} />
-              {comments[component.id]?.length
-                ? `${comments[component.id].length} reactie${comments[component.id].length !== 1 ? 's' : ''}`
-                : 'Feedback geven'}
+              Feedback geven
+              {comments[component.id]?.length > 0 && (
+                <span className="bg-blue-500 text-white text-[10px] font-semibold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                  {comments[component.id].length}
+                </span>
+              )}
             </button>
 
             {/* Comment panel */}
