@@ -85,11 +85,11 @@ export async function GET() {
 
   const reactionNotifs = (reactions ?? [])
     .filter((r) => {
-      const comment = r.comments as { page_component_id: string; content: string } | null
+      const comment = r.comments as unknown as { page_component_id: string; content: string } | null
       return comment && componentIds.includes(comment.page_component_id)
     })
     .map((r) => {
-      const comment = r.comments as { page_component_id: string; content: string }
+      const comment = r.comments as unknown as { page_component_id: string; content: string }
       const { pageId, projectId, project } = enriched(comment)
       return {
         id: `reaction-${r.id}`,
