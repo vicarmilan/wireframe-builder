@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Users, Building2, Bell, X } from 'lucide-react'
+import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Eye, Link2, Trash2, AlertTriangle, Users, Building2, Bell, X } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Project } from '@/types'
@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [showNew, setShowNew] = useState(false)
   const [editProject, setEditProject] = useState<Project | null>(null)
+  const [deleteProject, setDeleteProject] = useState<Project | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotifs, setShowNotifs] = useState(false)
   const bellRef = useRef<HTMLDivElement>(null)
@@ -214,6 +215,7 @@ export default function DashboardPage() {
                 project={project}
                 onEdit={() => setEditProject(project)}
                 onMarkRead={onMarkRead}
+                onDelete={() => setDeleteProject(project)}
               />
             ))}
             <button
@@ -236,12 +238,20 @@ export default function DashboardPage() {
           onDeleted={() => onDeleted(editProject.id)}
         />
       )}
+      {deleteProject && (
+        <DeleteProjectModal
+          project={deleteProject}
+          onClose={() => setDeleteProject(null)}
+          onDeleted={() => { onDeleted(deleteProject.id); setDeleteProject(null) }}
+        />
+      )}
     </div>
   )
 }
 
-function ProjectCard({ project, onEdit, onMarkRead }: { project: Project; onEdit: () => void; onMarkRead: (id: string) => void }) {
+function ProjectCard({ project, onEdit, onMarkRead, onDelete }: { project: Project; onEdit: () => void; onMarkRead: (id: string) => void; onDelete: () => void }) {
   const unread = project.unread_comments ?? 0
+  const [copied, setCopied] = useState(false)
 
   async function handleMarkRead(e: React.MouseEvent) {
     e.preventDefault()
@@ -251,6 +261,13 @@ function ProjectCard({ project, onEdit, onMarkRead }: { project: Project; onEdit
       body: JSON.stringify({ projectId: project.id }),
     })
     onMarkRead(project.id)
+  }
+
+  function handleCopyLink(e: React.MouseEvent) {
+    e.preventDefault()
+    navigator.clipboard.writeText(`${window.location.origin}/preview/${project.preview_token}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -268,13 +285,39 @@ function ProjectCard({ project, onEdit, onMarkRead }: { project: Project; onEdit
         </div>
       )}
 
-      <button
-        onClick={(e) => { e.preventDefault(); onEdit() }}
-        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"
-        title="Bewerken"
-      >
-        <Pencil size={14} />
-      </button>
+      {/* Action icons */}
+      <div className="absolute top-4 right-4 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Link
+          href={`/preview/${project.preview_token}`}
+          target="_blank"
+          onClick={(e) => e.stopPropagation()}
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-500 transition-colors"
+          title="Preview openen"
+        >
+          <Eye size={14} />
+        </Link>
+        <button
+          onClick={handleCopyLink}
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          title={copied ? 'Gekopieerd!' : 'Link kopiëren'}
+        >
+          <Link2 size={14} className={copied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'} />
+        </button>
+        <button
+          onClick={(e) => { e.preventDefault(); onEdit() }}
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          title="Bewerken"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          onClick={(e) => { e.preventDefault(); onDelete() }}
+          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+          title="Verwijderen"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
 
       <Link href={`/projects/${project.id}`} className="block">
         <div className="flex items-start mb-4">
@@ -309,6 +352,48 @@ function ProjectCard({ project, onEdit, onMarkRead }: { project: Project; onEdit
           )}
         </div>
       </Link>
+    </div>
+  )
+}
+
+function DeleteProjectModal({ project, onClose, onDeleted }: { project: Project; onClose: () => void; onDeleted: () => void }) {
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    setDeleting(true)
+    const res = await fetch(`/api/projects/${project.id}`, { method: 'DELETE' })
+    if (!res.ok) { setDeleting(false); return }
+    onDeleted()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-5">
+        <div className="flex items-start gap-3 bg-red-50 rounded-xl p-4">
+          <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-red-700 text-sm">Project verwijderen?</p>
+            <p className="text-red-600 text-sm mt-1">
+              Dit verwijdert <strong>{project.name}</strong> inclusief alle pagina&apos;s en componenten. Dit kan niet ongedaan worden gemaakt.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 border border-gray-200 text-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            Annuleren
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex-1 bg-red-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+          >
+            {deleting ? 'Verwijderen...' : 'Ja, verwijderen'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

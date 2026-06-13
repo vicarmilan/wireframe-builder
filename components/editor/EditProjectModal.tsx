@@ -198,7 +198,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
               <div>
                 <p className="font-medium text-red-700 text-sm">Project verwijderen?</p>
                 <p className="text-red-600 text-sm mt-1">
-                  Dit verwijdert <strong>{project.name}</strong> inclusief alle pagina&apos;s en componenten. Dit kan niet ongedaan worden gemaakt.
+                  Dit verwijdert <strong>{project.name}</strong>{' '}inclusief alle pagina&apos;s en componenten. Dit kan niet ongedaan worden gemaakt.
                 </p>
               </div>
             </div>
