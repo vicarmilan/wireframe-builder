@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
@@ -14,6 +14,11 @@ export async function GET() {
     .eq('owner_id', userId)
 
   if (!projects?.length) return NextResponse.json([])
+
+  // Get admin's own email to exclude their own reactions
+  const clerk = await clerkClient()
+  const adminUser = await clerk.users.getUser(userId)
+  const adminEmail = adminUser.emailAddresses[0]?.emailAddress ?? ''
 
   const projectIds = projects.map((p) => p.id)
 
@@ -50,11 +55,12 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  // Fetch unread reactions
+  // Fetch unread reactions by others (not the admin themselves)
   const { data: reactions } = await supabase
     .from('comment_reactions')
     .select('id, comment_id, author_name, author_email, reaction, created_at, comments(page_component_id, content)')
     .is('admin_read_at', null)
+    .neq('author_email', adminEmail)
     .order('created_at', { ascending: false })
     .limit(50)
 

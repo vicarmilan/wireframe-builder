@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from 'react'
 import { ArrowLeft, Eye, Layout, Copy, Check } from 'lucide-react'
+import NotificationBell from '@/components/shared/NotificationBell'
 import Link from 'next/link'
 import { arrayMove } from '@dnd-kit/sortable'
 import { PageComponent, ComponentDefinition, Project, Page } from '@/types'
@@ -157,6 +158,7 @@ export default function PageEditorPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationBell apiUrl="/api/notifications" />
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${

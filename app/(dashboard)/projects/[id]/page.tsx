@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/utils'
 import NewPageModal from '@/components/editor/NewPageModal'
 import ImportPagesModal from '@/components/editor/ImportPagesModal'
 import EditProjectModal from '@/components/editor/EditProjectModal'
+import NotificationBell from '@/components/shared/NotificationBell'
 import {
   DndContext, DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent,
   PointerSensor, useSensor, useSensors, closestCenter, DragOverlay,
@@ -304,6 +305,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <NotificationBell apiUrl="/api/notifications" />
           <button
             onClick={() => setShowEdit(true)}
             className="flex items-center gap-2 border border-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors"

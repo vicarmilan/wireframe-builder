@@ -7,6 +7,7 @@ import { useAuth, useUser } from '@clerk/nextjs'
 import { Project, Page, PageComponent, Comment } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
 import OnboardingModal from '@/components/preview/OnboardingModal'
+import NotificationBell from '@/components/shared/NotificationBell'
 
 interface FullProject extends Project {
   pages: (Page & { page_components: PageComponent[] })[]
@@ -317,6 +318,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         )}
 
         <div className="flex items-center gap-2">
+          <NotificationBell apiUrl="/api/portal/notifications" />
           {approved ? (
             <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
               <CheckCircle2 size={13} />
