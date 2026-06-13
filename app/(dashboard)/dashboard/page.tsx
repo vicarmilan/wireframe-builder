@@ -251,11 +251,18 @@ export default function DashboardPage() {
 }
 
 const PREVIEW_INNER_WIDTH = 1280
-const PREVIEW_SCALE = 0.27
 const PREVIEW_HEIGHT = 180
 
 function CardPreview({ projectId }: { projectId: string }) {
   const [components, setComponents] = useState<PageComponent[] | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0.27)
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setScale(containerRef.current.offsetWidth / PREVIEW_INNER_WIDTH)
+    }
+  }, [])
 
   useEffect(() => {
     fetch(`/api/projects/${projectId}/pages`)
@@ -274,26 +281,26 @@ function CardPreview({ projectId }: { projectId: string }) {
   }, [projectId])
 
   if (components === null) {
-    return <div className="skeleton w-full" style={{ height: PREVIEW_HEIGHT }} />
+    return <div ref={containerRef} className="skeleton w-full" style={{ height: PREVIEW_HEIGHT }} />
   }
 
   if (components.length === 0) {
     return (
-      <div className="w-full bg-gray-50 flex items-center justify-center text-gray-300 text-xs" style={{ height: PREVIEW_HEIGHT }}>
+      <div ref={containerRef} className="w-full bg-gray-50 flex items-center justify-center text-gray-300 text-xs" style={{ height: PREVIEW_HEIGHT }}>
         Geen componenten
       </div>
     )
   }
 
   return (
-    <div style={{ height: PREVIEW_HEIGHT, overflow: 'hidden', position: 'relative', background: 'white' }}>
+    <div ref={containerRef} style={{ height: PREVIEW_HEIGHT, overflow: 'hidden', position: 'relative', background: 'white' }}>
       <div style={{
         position: 'absolute',
         top: 0,
         left: 0,
         width: PREVIEW_INNER_WIDTH,
         transformOrigin: 'top left',
-        transform: `scale(${PREVIEW_SCALE})`,
+        transform: `scale(${scale})`,
         pointerEvents: 'none',
         userSelect: 'none',
       }}>
