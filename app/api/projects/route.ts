@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { generateToken } from '@/lib/utils'
@@ -31,6 +31,10 @@ export async function GET() {
   let unreadByProject: Record<string, number> = {}
 
   if (pageIds.length > 0) {
+    const clerk = await clerkClient()
+    const adminUser = await clerk.users.getUser(userId)
+    const adminEmail = adminUser.emailAddresses[0]?.emailAddress ?? ''
+
     const { data: components } = await supabase
       .from('page_components')
       .select('id, page_id')
@@ -43,6 +47,7 @@ export async function GET() {
         .from('comments')
         .select('page_component_id')
         .in('page_component_id', componentIds)
+        .neq('author_email', adminEmail)
         .is('read_at', null)
 
       // Map component -> page -> project
