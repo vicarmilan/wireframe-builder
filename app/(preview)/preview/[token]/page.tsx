@@ -190,11 +190,19 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
       {/* Preview header */}
       <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          {isSignedIn && (
+          {activePage ? (
+            <button
+              onClick={() => setActivePage(null)}
+              className="text-gray-400 hover:text-gray-600 transition-colors mr-1"
+              title="Terug naar overzicht"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          ) : isSignedIn ? (
             <Link href="/dashboard" className="text-gray-400 hover:text-gray-600 transition-colors mr-1" title="Terug naar dashboard">
               <ArrowLeft size={18} />
             </Link>
-          )}
+          ) : null}
           <div className="w-7 h-7 bg-[#2563EB] rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-xs">V</span>
           </div>
@@ -205,18 +213,9 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         </div>
 
         {/* Page tabs with dropdowns for children */}
-        {project && activePage && (
+        {project && activePage && project.pages.length > 1 && (
           <div className="flex gap-1 items-center">
-          {(
-            <button
-              onClick={() => setActivePage(null)}
-              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 pr-2 mr-1 border-r border-gray-100 transition-colors"
-            >
-              <ArrowLeft size={12} />
-              Overzicht
-            </button>
-          )}
-          {project.pages.length > 1 && <>
+          {<>
             {project.pages
               .filter((p) => !p.parent_id)
               .map((page) => {
