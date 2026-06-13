@@ -268,7 +268,7 @@ function CardPreview({ projectId }: { projectId: string }) {
       .then((comps) => {
         if (!comps) return
         const sorted = Array.isArray(comps) ? comps.sort((a: PageComponent, b: PageComponent) => a.order - b.order) : []
-        setComponents(sorted.slice(0, 3))
+        setComponents(sorted.slice(0, 5))
       })
       .catch(() => setComponents([]))
   }, [projectId])

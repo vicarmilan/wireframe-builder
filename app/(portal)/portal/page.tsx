@@ -4,7 +4,63 @@ import { useState, useEffect } from 'react'
 import { useUser, UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { Layout, Clock } from 'lucide-react'
-import { Project } from '@/types'
+import { Project, PageComponent } from '@/types'
+import WireframeComponent from '@/components/wireframes/WireframeComponent'
+
+const PREVIEW_INNER_WIDTH = 1280
+const PREVIEW_SCALE = 0.27
+const PREVIEW_HEIGHT = 180
+
+function CardPreview({ projectId }: { projectId: string }) {
+  const [components, setComponents] = useState<PageComponent[] | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/pages`)
+      .then((r) => r.json())
+      .then((pages) => {
+        if (!Array.isArray(pages) || pages.length === 0) { setComponents([]); return }
+        const firstPage = pages.sort((a: { order: number }, b: { order: number }) => a.order - b.order)[0]
+        return fetch(`/api/pages/${firstPage.id}/components`).then((r) => r.json())
+      })
+      .then((comps) => {
+        if (!comps) return
+        const sorted = Array.isArray(comps) ? comps.sort((a: PageComponent, b: PageComponent) => a.order - b.order) : []
+        setComponents(sorted.slice(0, 5))
+      })
+      .catch(() => setComponents([]))
+  }, [projectId])
+
+  if (components === null) {
+    return <div className="skeleton w-full" style={{ height: PREVIEW_HEIGHT }} />
+  }
+
+  if (components.length === 0) {
+    return (
+      <div className="w-full bg-gray-50 flex items-center justify-center text-gray-300 text-xs" style={{ height: PREVIEW_HEIGHT }}>
+        Geen componenten
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ height: PREVIEW_HEIGHT, overflow: 'hidden', position: 'relative', background: 'white' }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: PREVIEW_INNER_WIDTH,
+        transformOrigin: 'top left',
+        transform: `scale(${PREVIEW_SCALE})`,
+        pointerEvents: 'none',
+        userSelect: 'none',
+      }}>
+        {components.map((comp) => (
+          <WireframeComponent key={comp.id} component={comp} editing={false} onPropChange={() => {}} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 interface PortalData {
   projects: Project[]
@@ -88,16 +144,18 @@ function ProjectCard({ project }: { project: Project }) {
   return (
     <Link
       href={`/preview/${project.preview_token}`}
-      className="block bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md hover:border-blue-100 transition-all"
+      className="block bg-white rounded-2xl border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all overflow-hidden"
     >
-      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
-        <Layout size={18} className="text-[#2563EB]" />
+      <div className="border-b border-gray-100">
+        <CardPreview projectId={project.id} />
       </div>
-      <h3 className="font-semibold text-gray-900 mb-0.5">{project.name}</h3>
-      <p className="text-xs text-gray-400">{project.client_name}</p>
-      <div className="flex items-center gap-1.5 mt-4 text-xs text-gray-300">
-        <Clock size={11} />
-        {new Date(project.updated_at).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' })}
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{project.name}</h3>
+        <p className="text-xs text-gray-400">{project.client_name}</p>
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-300">
+          <Clock size={11} />
+          {new Date(project.updated_at).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </div>
       </div>
     </Link>
   )
