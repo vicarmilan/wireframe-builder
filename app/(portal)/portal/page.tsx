@@ -11,24 +11,20 @@ const PREVIEW_INNER_WIDTH = 1280
 const PREVIEW_SCALE = 0.27
 const PREVIEW_HEIGHT = 180
 
-function CardPreview({ projectId }: { projectId: string }) {
+function CardPreview({ previewToken }: { previewToken: string }) {
   const [components, setComponents] = useState<PageComponent[] | null>(null)
 
   useEffect(() => {
-    fetch(`/api/projects/${projectId}/pages`)
-      .then((r) => r.json())
-      .then((pages) => {
-        if (!Array.isArray(pages) || pages.length === 0) { setComponents([]); return }
-        const firstPage = pages.sort((a: { order: number }, b: { order: number }) => a.order - b.order)[0]
-        return fetch(`/api/pages/${firstPage.id}/components`).then((r) => r.json())
-      })
-      .then((comps) => {
-        if (!comps) return
-        const sorted = Array.isArray(comps) ? comps.sort((a: PageComponent, b: PageComponent) => a.order - b.order) : []
+    fetch(`/api/preview/${previewToken}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((project) => {
+        if (!project?.pages?.length) { setComponents([]); return }
+        const firstPage = project.pages.sort((a: { order: number }, b: { order: number }) => a.order - b.order)[0]
+        const sorted = (firstPage.page_components ?? []).sort((a: PageComponent, b: PageComponent) => a.order - b.order)
         setComponents(sorted.slice(0, 5))
       })
       .catch(() => setComponents([]))
-  }, [projectId])
+  }, [previewToken])
 
   if (components === null) {
     return <div className="skeleton w-full" style={{ height: PREVIEW_HEIGHT }} />
@@ -147,7 +143,7 @@ function ProjectCard({ project }: { project: Project }) {
       className="block bg-white rounded-2xl border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all overflow-hidden"
     >
       <div className="border-b border-gray-100">
-        <CardPreview projectId={project.id} />
+        <CardPreview previewToken={project.preview_token} />
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{project.name}</h3>
