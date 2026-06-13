@@ -170,7 +170,8 @@ function StatusBadge({ status }: { status: ProjectStatus }) {
 
 function ProjectCard({ project }: { project: Project }) {
   const status = project.status ?? 'in_progress'
-  const isLocked = status === 'in_progress'
+  const clientAccess = (project as Project & { client_access?: boolean }).client_access
+  const isLocked = status === 'in_progress' || clientAccess === false
 
   const cardContent = (
     <>

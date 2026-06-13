@@ -72,10 +72,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       .select('user_id')
       .eq('client_id', projectBase.client_id)
 
-    const explicitIds = new Set((members ?? []).map((m) => m.user_id))
     clientMembers = await Promise.all(
       (clientUsers ?? [])
-        .filter((cu) => !explicitIds.has(cu.user_id))
         .map(async (cu) => {
           try {
             const user = await clerk.users.getUser(cu.user_id)
