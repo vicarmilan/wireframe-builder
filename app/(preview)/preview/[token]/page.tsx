@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { MessageSquare, X, Send, Check, ArrowLeft, Lock, Pencil, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { MessageSquare, X, Send, Check, ArrowLeft, Lock, Pencil, Trash2, CheckCircle2, AlertTriangle, FileText, ChevronRight } from 'lucide-react'
 import { useAuth, useUser } from '@clerk/nextjs'
 import { Project, Page, PageComponent, Comment } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
@@ -44,12 +44,11 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
       .then((data) => {
         if (!data) return
         setProject(data)
-        setActivePage(data.pages?.[0]?.id || null)
         setLoading(false)
         // Show onboarding once per browser
         const seen = localStorage.getItem('vicar_onboarding_seen')
         if (!seen) setShowOnboarding(true)
-        // Scroll to a specific component if hash is present
+        // If hash present, jump directly to that page (bypass overview)
         const hash = window.location.hash
         if (hash.startsWith('#feedback-panel-')) {
           const componentId = hash.replace('#feedback-panel-', '')
@@ -263,8 +262,18 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         </div>
 
         {/* Page tabs with dropdowns for children */}
-        {project && project.pages.length > 1 && (
+        {project && (
           <div className="flex gap-1 items-center">
+          {activePage && (
+            <button
+              onClick={() => setActivePage(null)}
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 pr-2 mr-1 border-r border-gray-100 transition-colors"
+            >
+              <ArrowLeft size={12} />
+              Overzicht
+            </button>
+          )}
+          {project.pages.length > 1 && <>
             {project.pages
               .filter((p) => !p.parent_id)
               .map((page) => {
@@ -314,6 +323,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
                   </div>
                 )
               })}
+            </>}
           </div>
         )}
 
@@ -343,8 +353,16 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         </div>
       </header>
 
+      {/* Page overview (no page selected yet) */}
+      {!activePage && project && (
+        <PageOverview
+          project={project}
+          onSelectPage={(id) => setActivePage(id)}
+        />
+      )}
+
       {/* Page content */}
-      <div>
+      {activePage && <div>
         {currentPage?.page_components.map((component) => (
           <div key={component.id} className="relative group">
             <div className="overflow-hidden">
@@ -447,6 +465,63 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
             Deze pagina heeft nog geen inhoud.
           </div>
         )}
+      </div>}
+    </div>
+  )
+}
+
+function PageOverview({
+  project,
+  onSelectPage,
+}: {
+  project: FullProject
+  onSelectPage: (id: string) => void
+}) {
+  const pages = [...project.pages].sort((a, b) => a.order - b.order)
+
+  function renderPages(parentId: string | null, depth: number) {
+    return pages
+      .filter((p) => (p.parent_id ?? null) === parentId)
+      .map((page) => {
+        const hasChildren = pages.some((p) => p.parent_id === page.id)
+        return (
+          <div key={page.id}>
+            <button
+              onClick={() => onSelectPage(page.id)}
+              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group text-left"
+              style={{ paddingLeft: depth > 0 ? `${24 + depth * 32}px` : undefined }}
+            >
+              {depth > 0 && (
+                <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200" style={{ left: `${(depth) * 32}px` }} />
+              )}
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                depth === 0 ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'
+              }`}>
+                <FileText size={14} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold text-gray-900 ${depth > 0 ? 'font-medium' : ''}`}>{page.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">/{page.slug}</p>
+              </div>
+              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
+            </button>
+            {hasChildren && (
+              <div className="relative">
+                {renderPages(page.id, depth + 1)}
+              </div>
+            )}
+            {depth === 0 && <div className="h-px bg-gray-100 mx-6" />}
+          </div>
+        )
+      })
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-10">
+      <h2 className="text-lg font-bold text-gray-900 mb-1">{project.name}</h2>
+      <p className="text-sm text-gray-400 mb-6">Kies een pagina om de wireframe te bekijken.</p>
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        {renderPages(null, 0)}
       </div>
     </div>
   )
