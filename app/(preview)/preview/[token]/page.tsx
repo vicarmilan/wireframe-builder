@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { MessageSquare, X, Send, Check, ArrowLeft, Lock, Pencil, Trash2, CheckCircle2, AlertTriangle, FileText, ChevronRight } from 'lucide-react'
+import { MessageSquare, X, Send, Check, ArrowLeft, Lock, Pencil, Trash2, CheckCircle2, AlertTriangle, FileText, ChevronRight, List, Network } from 'lucide-react'
 import { useAuth, useUser } from '@clerk/nextjs'
 import { Project, Page, PageComponent, Comment } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
@@ -262,9 +262,9 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         </div>
 
         {/* Page tabs with dropdowns for children */}
-        {project && (
+        {project && activePage && (
           <div className="flex gap-1 items-center">
-          {activePage && (
+          {(
             <button
               onClick={() => setActivePage(null)}
               className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 pr-2 mr-1 border-r border-gray-100 transition-colors"
@@ -477,9 +477,10 @@ function PageOverview({
   project: FullProject
   onSelectPage: (id: string) => void
 }) {
+  const [view, setView] = useState<'list' | 'sitemap'>('list')
   const pages = [...project.pages].sort((a, b) => a.order - b.order)
 
-  function renderPages(parentId: string | null, depth: number) {
+  function renderList(parentId: string | null, depth: number) {
     return pages
       .filter((p) => (p.parent_id ?? null) === parentId)
       .map((page) => {
@@ -488,41 +489,112 @@ function PageOverview({
           <div key={page.id}>
             <button
               onClick={() => onSelectPage(page.id)}
-              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group text-left"
-              style={{ paddingLeft: depth > 0 ? `${24 + depth * 32}px` : undefined }}
+              className="w-full flex items-center gap-4 py-4 hover:bg-gray-50 transition-colors group text-left"
+              style={{ paddingLeft: depth > 0 ? `${24 + depth * 32}px` : '24px' }}
             >
-              {depth > 0 && (
-                <div className="absolute left-0 top-0 bottom-0 w-px bg-blue-200" style={{ left: `${(depth) * 32}px` }} />
-              )}
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                 depth === 0 ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'
               }`}>
                 <FileText size={14} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-semibold text-gray-900 ${depth > 0 ? 'font-medium' : ''}`}>{page.name}</p>
+                <p className="text-sm font-semibold text-gray-900">{page.name}</p>
                 <p className="text-xs text-gray-400 mt-0.5">/{page.slug}</p>
               </div>
-              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
+              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0 mr-6" />
             </button>
-            {hasChildren && (
-              <div className="relative">
-                {renderPages(page.id, depth + 1)}
-              </div>
-            )}
+            {hasChildren && <div className="relative">{renderList(page.id, depth + 1)}</div>}
             {depth === 0 && <div className="h-px bg-gray-100 mx-6" />}
           </div>
         )
       })
   }
 
-  return (
-    <div className="max-w-2xl mx-auto px-6 py-10">
-      <h2 className="text-lg font-bold text-gray-900 mb-1">{project.name}</h2>
-      <p className="text-sm text-gray-400 mb-6">Kies een pagina om de wireframe te bekijken.</p>
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        {renderPages(null, 0)}
+  function renderSitemapNode(page: typeof pages[0], isRoot: boolean) {
+    const children = pages.filter((p) => p.parent_id === page.id)
+    return (
+      <div key={page.id} className="flex flex-col items-center">
+        <button
+          onClick={() => onSelectPage(page.id)}
+          className={`flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-center w-36 transition-all hover:shadow-md ${
+            isRoot ? 'bg-[#2563EB] border-blue-600 text-white hover:bg-blue-700' : 'bg-white border-gray-200 text-gray-900 hover:border-blue-300'
+          }`}
+        >
+          <FileText size={14} className={isRoot ? 'text-blue-200' : 'text-gray-400'} />
+          <span className={`text-xs font-semibold leading-tight line-clamp-2 ${isRoot ? 'text-white' : 'text-gray-800'}`}>{page.name}</span>
+          <span className={`text-[10px] truncate max-w-full ${isRoot ? 'text-blue-200' : 'text-gray-400'}`}>/{page.slug}</span>
+        </button>
+        {children.length > 0 && (
+          <div className="flex flex-col items-center">
+            <div className="w-px h-8 bg-gray-200" />
+            <div className="relative flex items-start gap-6">
+              {children.length > 1 && (
+                <div className="absolute top-0 h-px bg-gray-200 pointer-events-none"
+                  style={{ left: `calc(50% / ${children.length})`, right: `calc(50% / ${children.length})` }}
+                />
+              )}
+              {children.map((child) => (
+                <div key={child.id} className="flex flex-col items-center">
+                  <div className="w-px h-8 bg-gray-200" />
+                  {renderSitemapNode(child, false)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+    )
+  }
+
+  const roots = pages.filter((p) => !p.parent_id)
+  const multipleRoots = roots.length > 1
+
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">{project.name}</h2>
+          <p className="text-sm text-gray-400 mt-0.5">Kies een pagina om de wireframe te bekijken.</p>
+        </div>
+        <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setView('list')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${view === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <List size={13} />
+            Lijst
+          </button>
+          <button
+            onClick={() => setView('sitemap')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${view === 'sitemap' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <Network size={13} />
+            Sitemap
+          </button>
+        </div>
+      </div>
+
+      {view === 'list' ? (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          {renderList(null, 0)}
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto p-8">
+          <div className="w-fit mx-auto">
+            <div className="relative flex gap-12 items-start">
+              {multipleRoots && (
+                <div className="absolute top-0 left-[72px] right-[72px] h-px bg-gray-200 pointer-events-none" />
+              )}
+              {roots.map((root) => (
+                <div key={root.id} className="flex flex-col items-center">
+                  {multipleRoots && <div className="w-px h-8 bg-gray-200" />}
+                  {renderSitemapNode(root, true)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
