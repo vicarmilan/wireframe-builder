@@ -78,10 +78,30 @@ body {
   animation: slide-in 0.2s ease-out;
 }
 
-/* Hide Clerk branding footer globally */
+/* Hide Clerk branding and dev-mode decoration globally */
 .cl-footer,
 [data-localization-key="footerPageLink__privacyPage"],
 [data-localization-key="footerPageLink__termsPage"],
 [class*="cl-footer"] {
   display: none !important;
+}
+
+/* Remove the orange diagonal dev-mode stripe from the Clerk sidebar */
+.clerk-profile-modal .cl-navbar::before,
+.clerk-profile-modal .cl-navbar::after,
+.clerk-profile-modal [class*="cl-navbar"]::before,
+.clerk-profile-modal [class*="cl-navbar"]::after {
+  display: none !important;
+}
+
+/* The stripe is applied as a background-image on the card/navbar wrapper */
+.clerk-profile-modal .cl-navbar,
+.clerk-profile-modal [class*="cl-navbar"] {
+  background-image: none !important;
+  background: #f9fafb !important;
+}
+
+.clerk-profile-modal .cl-card,
+.clerk-profile-modal [class*="cl-card"] {
+  background-image: none !important;
 }

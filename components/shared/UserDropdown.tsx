@@ -97,10 +97,10 @@ export default function UserDropdown() {
 
       {showProfile && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowProfile(false) }}
         >
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+          <div className="clerk-profile-modal relative bg-white rounded-2xl shadow-2xl w-full max-w-[860px] overflow-hidden max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowProfile(false)}
               className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors bg-white"
@@ -113,15 +113,16 @@ export default function UserDropdown() {
                 variables: { colorPrimary: '#2563EB' },
                 elements: {
                   rootBox: { width: '100%' },
-                  card: { border: 'none', boxShadow: 'none', borderRadius: 0, margin: 0 },
+                  card: { border: 'none', boxShadow: 'none', borderRadius: 0, margin: 0, width: '100%' },
                   footer: { display: 'none' },
                   footerAction: { display: 'none' },
                   footerActionLink: { display: 'none' },
-                  pageScrollBox: { padding: '24px 32px' },
+                  pageScrollBox: { padding: '28px 36px' },
                   navbar: {
                     background: '#f9fafb',
                     borderRight: '1px solid #f3f4f6',
                     padding: '20px 12px',
+                    backgroundImage: 'none',
                   },
                   navbarButton: { borderRadius: '8px' },
                   headerTitle: { fontSize: '17px', fontWeight: '600' },
