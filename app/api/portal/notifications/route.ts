@@ -1,22 +1,18 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
 async function getClientContext(userId: string) {
   const supabase = createServiceClient()
 
-  const { data: clientUser } = await supabase
-    .from('client_users')
-    .select('client_id')
-    .eq('user_id', userId)
-    .single()
+  const [clerkUser, { data: clientUser }] = await Promise.all([
+    currentUser(),
+    supabase.from('client_users').select('client_id').eq('user_id', userId).single(),
+  ])
 
   if (!clientUser) return null
 
-  // Get the client's own email so we can exclude their own reactions
-  const clerk = await clerkClient()
-  const clerkUser = await clerk.users.getUser(userId)
-  const userEmail = clerkUser.emailAddresses[0]?.emailAddress ?? ''
+  const userEmail = clerkUser?.emailAddresses[0]?.emailAddress ?? ''
 
   const { data: projects } = await supabase
     .from('projects')
@@ -63,7 +59,6 @@ export async function GET(request: Request) {
     return { projectId, project }
   }
 
-  // Comments by others
   let commentQuery = supabase
     .from('comments')
     .select('id, page_component_id, author_name, author_email, author_id, content, created_at, client_read_at')
@@ -73,13 +68,12 @@ export async function GET(request: Request) {
     .limit(100)
   if (!all) commentQuery = commentQuery.is('client_read_at', null)
 
-  const { data: comments } = await commentQuery
-
-  // All comments for reaction lookup
-  const { data: commentsAll } = await supabase
+  const commentsAllQuery = supabase
     .from('comments')
     .select('id, page_component_id, content')
     .in('page_component_id', componentIds)
+
+  const [{ data: comments }, { data: commentsAll }] = await Promise.all([commentQuery, commentsAllQuery])
 
   const commentIds = (commentsAll ?? []).map((c) => c.id)
   const commentMap: Record<string, { page_component_id: string; content: string }> = {}
@@ -88,13 +82,13 @@ export async function GET(request: Request) {
   let reactionQuery = supabase
     .from('comment_reactions')
     .select('id, comment_id, author_name, author_email, reaction, created_at, client_read_at')
-    .in('comment_id', commentIds)
+    .in('comment_id', commentIds.length ? commentIds : ['00000000-0000-0000-0000-000000000000'])
     .neq('author_email', userEmail)
     .order('created_at', { ascending: false })
     .limit(100)
   if (!all) reactionQuery = reactionQuery.is('client_read_at', null)
 
-  const { data: reactions } = commentIds.length ? await reactionQuery : { data: [] }
+  const { data: reactions } = await reactionQuery
 
   const commentNotifs = (comments ?? []).map((c) => {
     const { projectId, project } = enriched(c.page_component_id)

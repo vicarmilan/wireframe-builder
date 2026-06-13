@@ -1,4 +1,4 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { generateToken } from '@/lib/utils'
@@ -9,16 +9,19 @@ export async function GET() {
 
   const supabase = createServiceClient()
 
-  const { data: projects, error } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('owner_id', userId)
-    .order('updated_at', { ascending: false })
+  const [adminUser, { data: projects, error }] = await Promise.all([
+    currentUser(),
+    supabase
+      .from('projects')
+      .select('*')
+      .eq('owner_id', userId)
+      .order('updated_at', { ascending: false }),
+  ])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!projects?.length) return NextResponse.json([])
 
-  // Get unread comment counts per project
+  const adminEmail = adminUser?.emailAddresses[0]?.emailAddress ?? ''
   const projectIds = projects.map((p) => p.id)
 
   const { data: pages } = await supabase
@@ -27,14 +30,9 @@ export async function GET() {
     .in('project_id', projectIds)
 
   const pageIds = (pages ?? []).map((p) => p.id)
-
   let unreadByProject: Record<string, number> = {}
 
   if (pageIds.length > 0) {
-    const clerk = await clerkClient()
-    const adminUser = await clerk.users.getUser(userId)
-    const adminEmail = adminUser.emailAddresses[0]?.emailAddress ?? ''
-
     const { data: components } = await supabase
       .from('page_components')
       .select('id, page_id')
@@ -50,7 +48,6 @@ export async function GET() {
         .neq('author_email', adminEmail)
         .is('read_at', null)
 
-      // Map component -> page -> project
       const compToPage: Record<string, string> = {}
       const pageToProject: Record<string, string> = {}
       ;(components ?? []).forEach((c) => { compToPage[c.id] = c.page_id })

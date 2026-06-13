@@ -1,17 +1,19 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
 async function getAdminContext(userId: string) {
   const supabase = createServiceClient()
-  const clerk = await clerkClient()
-  const adminUser = await clerk.users.getUser(userId)
-  const adminEmail = adminUser.emailAddresses[0]?.emailAddress ?? ''
 
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('id, name, client_name, preview_token')
-    .eq('owner_id', userId)
+  const [adminUser, { data: projects }] = await Promise.all([
+    currentUser(),
+    supabase
+      .from('projects')
+      .select('id, name, client_name, preview_token')
+      .eq('owner_id', userId),
+  ])
+
+  const adminEmail = adminUser?.emailAddresses[0]?.emailAddress ?? ''
 
   if (!projects?.length) return null
 
@@ -53,7 +55,6 @@ export async function GET(request: Request) {
     return { pageId, projectId, project }
   }
 
-  // Fetch comments by others (not the admin themselves)
   let commentQuery = supabase
     .from('comments')
     .select('id, page_component_id, author_name, author_email, content, created_at, read_at')
@@ -63,9 +64,6 @@ export async function GET(request: Request) {
     .limit(100)
   if (!all) commentQuery = commentQuery.is('read_at', null)
 
-  const { data: comments } = await commentQuery
-
-  // Fetch reactions
   let reactionQuery = supabase
     .from('comment_reactions')
     .select('id, comment_id, author_name, author_email, reaction, created_at, admin_read_at, comments(page_component_id, content)')
@@ -74,7 +72,7 @@ export async function GET(request: Request) {
     .limit(100)
   if (!all) reactionQuery = reactionQuery.is('admin_read_at', null)
 
-  const { data: reactions } = await reactionQuery
+  const [{ data: comments }, { data: reactions }] = await Promise.all([commentQuery, reactionQuery])
 
   const commentNotifs = (comments ?? []).map((c) => {
     const { pageId, projectId, project } = enriched(c)
