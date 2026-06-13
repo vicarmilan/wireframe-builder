@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useUser, UserButton } from '@clerk/nextjs'
+import { useUser } from '@clerk/nextjs'
+import UserDropdown from '@/components/shared/UserDropdown'
 import Link from 'next/link'
 import { Layout, Clock, Lock, MessageCircle, CheckCircle2 } from 'lucide-react'
 import { Project, PageComponent, ProjectStatus } from '@/types'
@@ -103,7 +104,7 @@ export default function PortalPage() {
             </span>
           )}
           <NotificationBell apiUrl="/api/portal/notifications" historyUrl="/portal/notifications" />
-          <UserButton />
+          <UserDropdown />
         </div>
       </header>
 

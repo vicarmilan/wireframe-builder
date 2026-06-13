@@ -1,4 +1,6 @@
-import { UserButton } from '@clerk/nextjs'
+'use client'
+
+import UserDropdown from '@/components/shared/UserDropdown'
 
 export default function NoAccessPage() {
   return (
@@ -12,7 +14,7 @@ export default function NoAccessPage() {
           Je hebt geen toegang tot dit gedeelte. Neem contact op met het Vicar team als je denkt dat dit fout is.
         </p>
         <div className="flex justify-center">
-          <UserButton />
+          <UserDropdown />
         </div>
       </div>
     </div>
