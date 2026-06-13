@@ -10,6 +10,7 @@ import { Project, Page } from '@/types'
 import { formatDate } from '@/lib/utils'
 import NewPageModal from '@/components/editor/NewPageModal'
 import ImportPagesModal from '@/components/editor/ImportPagesModal'
+import EditProjectModal from '@/components/editor/EditProjectModal'
 import {
   DndContext, DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent,
   PointerSensor, useSensor, useSensors, closestCenter, DragOverlay,
@@ -104,6 +105,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [editingPage, setEditingPage] = useState<Page | null>(null)
   const [deletingPage, setDeletingPage] = useState<Page | null>(null)
   const [showMembers, setShowMembers] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
 
   // DnD state
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -301,6 +303,13 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowEdit(true)}
+            className="flex items-center gap-2 border border-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+          >
+            <Pencil size={14} />
+            Bewerken
+          </button>
+          <button
             onClick={() => setShowMembers(true)}
             className="flex items-center gap-2 border border-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors"
           >
@@ -442,6 +451,14 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       )}
       {showMembers && (
         <MembersModal projectId={id} onClose={() => setShowMembers(false)} />
+      )}
+      {showEdit && project && (
+        <EditProjectModal
+          project={project}
+          onClose={() => setShowEdit(false)}
+          onUpdated={(updated) => { setProject(updated); setShowEdit(false) }}
+          onDeleted={() => { window.location.href = '/dashboard' }}
+        />
       )}
     </div>
   )
