@@ -48,6 +48,22 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         // Show onboarding once per browser
         const seen = localStorage.getItem('vicar_onboarding_seen')
         if (!seen) setShowOnboarding(true)
+        // Scroll to a specific component if hash is present
+        const hash = window.location.hash
+        if (hash.startsWith('#feedback-panel-')) {
+          const componentId = hash.replace('#feedback-panel-', '')
+          // Find which page this component belongs to
+          const targetPage = data.pages?.find((p: { page_components: { id: string }[] }) =>
+            p.page_components?.some((c: { id: string }) => c.id === componentId)
+          )
+          if (targetPage) {
+            setActivePage(targetPage.id)
+            setCommenting(componentId)
+            setTimeout(() => {
+              document.getElementById(`feedback-panel-${componentId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 400)
+          }
+        }
         // Load comments for all pages
         const allPageIds: string[] = data.pages?.map((p: { id: string }) => p.id) ?? []
         Promise.all(
@@ -504,6 +520,19 @@ function ApprovalModal({ onClose, onConfirm }: { onClose: () => void; onConfirm:
   )
 }
 
+interface Reaction {
+  id: string
+  comment_id: string
+  author_email: string
+  reaction: string
+}
+
+const REACTIONS = [
+  { key: 'thumbs_up', emoji: '👍' },
+  { key: 'thumbs_down', emoji: '👎' },
+  { key: 'check', emoji: '✅' },
+]
+
 function CommentItem({
   comment,
   currentEmail,
@@ -518,7 +547,29 @@ function CommentItem({
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(comment.content)
   const [saving, setSaving] = useState(false)
+  const [reactions, setReactions] = useState<Reaction[]>([])
   const isOwn = currentEmail && comment.author_email === currentEmail
+
+  useEffect(() => {
+    fetch(`/api/comments/reactions?comment_ids=${comment.id}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setReactions(Array.isArray(data) ? data : []))
+  }, [comment.id])
+
+  async function toggleReaction(reactionKey: string) {
+    if (!currentEmail) return
+    const res = await fetch('/api/comments/reactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment_id: comment.id, author_email: currentEmail, reaction: reactionKey }),
+    })
+    const data = await res.json()
+    if (data.removed) {
+      setReactions((prev) => prev.filter((r) => !(r.comment_id === comment.id && r.author_email === currentEmail && r.reaction === reactionKey)))
+    } else if (data.id) {
+      setReactions((prev) => [...prev, data])
+    }
+  }
 
   async function handleEdit() {
     if (!editText.trim() || editText === comment.content) { setEditing(false); return }
@@ -604,6 +655,30 @@ function CommentItem({
       ) : (
         <p className="text-xs text-gray-600">{comment.content}</p>
       )}
+
+      {/* Reactions */}
+      <div className="flex items-center gap-1 mt-2 flex-wrap">
+        {REACTIONS.map(({ key, emoji }) => {
+          const reacted = reactions.filter((r) => r.reaction === key)
+          const mine = reacted.some((r) => r.author_email === currentEmail)
+          return (
+            <button
+              key={key}
+              onClick={() => toggleReaction(key)}
+              disabled={!currentEmail}
+              title={reacted.map((r) => r.author_email).join(', ') || undefined}
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs border transition-colors ${
+                mine
+                  ? 'bg-blue-50 border-blue-200 text-blue-700'
+                  : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+              } ${!currentEmail ? 'opacity-50 cursor-default' : ''}`}
+            >
+              <span>{emoji}</span>
+              {reacted.length > 0 && <span className="font-medium">{reacted.length}</span>}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

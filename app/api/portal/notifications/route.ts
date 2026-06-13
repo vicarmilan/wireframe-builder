@@ -2,17 +2,26 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
-// Get all unread notifications across all projects
 export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createServiceClient()
 
+  // Find client for this user
+  const { data: clientUser } = await supabase
+    .from('client_users')
+    .select('client_id')
+    .eq('user_id', userId)
+    .single()
+
+  if (!clientUser) return NextResponse.json([])
+
+  // Get all projects for this client
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, name, client_name, preview_token')
-    .eq('owner_id', userId)
+    .select('id, name, preview_token')
+    .eq('client_id', clientUser.client_id)
 
   if (!projects?.length) return NextResponse.json([])
 
@@ -20,7 +29,7 @@ export async function GET() {
 
   const { data: pages } = await supabase
     .from('pages')
-    .select('id, project_id, name')
+    .select('id, project_id')
     .in('project_id', projectIds)
 
   const pageIds = (pages ?? []).map((p) => p.id)
@@ -28,29 +37,31 @@ export async function GET() {
 
   const { data: components } = await supabase
     .from('page_components')
-    .select('id, page_id, component_type')
+    .select('id, page_id')
     .in('page_id', pageIds)
 
   const componentIds = (components ?? []).map((c) => c.id)
   if (!componentIds.length) return NextResponse.json([])
 
+  // Get unread comments by others (not by this user)
   const { data: comments } = await supabase
     .from('comments')
-    .select('id, page_component_id, author_name, author_email, content, created_at')
+    .select('id, page_component_id, author_name, author_email, author_id, content, created_at')
     .in('page_component_id', componentIds)
-    .is('read_at', null)
+    .neq('author_id', userId)
+    .is('client_read_at', null)
     .order('created_at', { ascending: false })
-    .limit(50)
+    .limit(30)
 
   if (!comments?.length) return NextResponse.json([])
 
   // Build lookup maps
   const compToPage: Record<string, string> = {}
   const pageToProject: Record<string, string> = {}
-  const projectMap: Record<string, { name: string; client_name: string; preview_token: string }> = {}
+  const projectMap: Record<string, { name: string; preview_token: string }> = {}
   ;(components ?? []).forEach((c) => { compToPage[c.id] = c.page_id })
   ;(pages ?? []).forEach((p) => { pageToProject[p.id] = p.project_id })
-  projects.forEach((p) => { projectMap[p.id] = { name: p.name, client_name: p.client_name, preview_token: p.preview_token } })
+  projects.forEach((p) => { projectMap[p.id] = { name: p.name, preview_token: p.preview_token } })
 
   const notifications = comments.map((c) => {
     const pageId = compToPage[c.page_component_id]
@@ -58,10 +69,8 @@ export async function GET() {
     const project = projectId ? projectMap[projectId] : null
     return {
       ...c,
-      page_id: pageId ?? null,
       project_id: projectId,
       project_name: project?.name ?? '',
-      client_name: project?.client_name ?? '',
       preview_token: project?.preview_token ?? '',
     }
   })
@@ -69,31 +78,33 @@ export async function GET() {
   return NextResponse.json(notifications)
 }
 
-// Mark all unread comments for a project as read
-export async function PATCH(request: Request) {
+// Mark all client notifications as read
+export async function PATCH() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { projectId } = await request.json()
-  if (!projectId) return NextResponse.json({ error: 'Missing projectId' }, { status: 400 })
-
   const supabase = createServiceClient()
 
-  // Verify ownership
-  const { data: project } = await supabase
-    .from('projects')
-    .select('id')
-    .eq('id', projectId)
-    .eq('owner_id', userId)
+  const { data: clientUser } = await supabase
+    .from('client_users')
+    .select('client_id')
+    .eq('user_id', userId)
     .single()
 
-  if (!project) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!clientUser) return NextResponse.json({ ok: true })
 
-  // Get all page_component IDs for this project
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('client_id', clientUser.client_id)
+
+  const projectIds = (projects ?? []).map((p) => p.id)
+  if (!projectIds.length) return NextResponse.json({ ok: true })
+
   const { data: pages } = await supabase
     .from('pages')
     .select('id')
-    .eq('project_id', projectId)
+    .in('project_id', projectIds)
 
   const pageIds = (pages ?? []).map((p) => p.id)
   if (!pageIds.length) return NextResponse.json({ ok: true })
@@ -108,9 +119,10 @@ export async function PATCH(request: Request) {
 
   await supabase
     .from('comments')
-    .update({ read_at: new Date().toISOString() })
+    .update({ client_read_at: new Date().toISOString() })
     .in('page_component_id', componentIds)
-    .is('read_at', null)
+    .neq('author_id', userId)
+    .is('client_read_at', null)
 
   return NextResponse.json({ ok: true })
 }

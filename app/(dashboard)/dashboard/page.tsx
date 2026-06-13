@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Eye, Link2, Trash2, AlertTriangle, Users, Building2, Bell, X, Lock, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Eye, Link2, Trash2, AlertTriangle, Users, Building2, Bell, X, Lock, MessageCircle, CheckCircle2, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Project, PageComponent, ProjectStatus } from '@/types'
@@ -20,6 +20,8 @@ interface Notification {
   project_id: string
   project_name: string
   client_name: string
+  preview_token: string
+  page_id: string | null
 }
 
 export default function DashboardPage() {
@@ -146,22 +148,34 @@ export default function DashboardPage() {
                       Geen nieuwe meldingen
                     </div>
                   ) : (
-                    notifications.map((n) => (
-                      <div key={n.id} className="flex gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold flex-shrink-0 mt-0.5">
-                          {n.author_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-1.5 flex-wrap">
-                            <span className="text-xs font-semibold text-gray-900">{n.author_name}</span>
-                            <span className="text-xs text-gray-400">op</span>
-                            <span className="text-xs font-medium text-blue-600 truncate">{n.project_name}</span>
+                    notifications.map((n) => {
+                      const href = n.preview_token
+                        ? `/preview/${n.preview_token}#feedback-panel-${n.page_component_id}`
+                        : '#'
+                      return (
+                        <Link
+                          key={n.id}
+                          href={href}
+                          target="_blank"
+                          onClick={() => setShowNotifs(false)}
+                          className="flex gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 cursor-pointer group"
+                        >
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold flex-shrink-0 mt-0.5">
+                            {n.author_name.charAt(0).toUpperCase()}
                           </div>
-                          <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.content}</p>
-                          <p className="text-[10px] text-gray-400 mt-1">{formatDate(n.created_at)}</p>
-                        </div>
-                      </div>
-                    ))
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline gap-1.5 flex-wrap">
+                              <span className="text-xs font-semibold text-gray-900">{n.author_name}</span>
+                              <span className="text-xs text-gray-400">op</span>
+                              <span className="text-xs font-medium text-blue-600 truncate group-hover:underline">{n.project_name}</span>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.content}</p>
+                            <p className="text-[10px] text-gray-400 mt-1">{formatDate(n.created_at)}</p>
+                          </div>
+                          <ExternalLink size={12} className="text-gray-300 group-hover:text-blue-400 flex-shrink-0 mt-1 transition-colors" />
+                        </Link>
+                      )
+                    })
                   )}
                 </div>
               </div>
