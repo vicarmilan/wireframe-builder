@@ -12,16 +12,25 @@ import WireframeComponent from '@/components/wireframes/WireframeComponent'
 
 interface Notification {
   id: string
+  type: 'comment' | 'reaction'
   page_component_id: string
   author_name: string
   author_email: string
-  content: string
+  content?: string
+  reaction?: string
+  comment_preview?: string
   created_at: string
   project_id: string
   project_name: string
   client_name: string
   preview_token: string
   page_id: string | null
+}
+
+const REACTION_EMOJI: Record<string, string> = {
+  thumbs_up: '👍',
+  thumbs_down: '👎',
+  check: '✅',
 }
 
 export default function DashboardPage() {
@@ -159,16 +168,30 @@ export default function DashboardPage() {
                           onClick={() => setShowNotifs(false)}
                           className="flex gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 cursor-pointer group"
                         >
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold flex-shrink-0 mt-0.5">
-                            {n.author_name.charAt(0).toUpperCase()}
+                          <div className="relative flex-shrink-0">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold mt-0.5">
+                              {n.author_name.charAt(0).toUpperCase()}
+                            </div>
+                            {n.type === 'reaction' && (
+                              <span className="absolute -bottom-1 -right-1 text-sm leading-none">
+                                {REACTION_EMOJI[n.reaction ?? ''] ?? '👍'}
+                              </span>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-baseline gap-1.5 flex-wrap">
                               <span className="text-xs font-semibold text-gray-900">{n.author_name}</span>
-                              <span className="text-xs text-gray-400">op</span>
+                              <span className="text-xs text-gray-400">
+                                {n.type === 'reaction' ? 'reageerde op' : 'op'}
+                              </span>
                               <span className="text-xs font-medium text-blue-600 truncate group-hover:underline">{n.project_name}</span>
                             </div>
-                            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.content}</p>
+                            {n.type === 'reaction' && n.comment_preview && (
+                              <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 italic">&ldquo;{n.comment_preview}&rdquo;</p>
+                            )}
+                            {n.type === 'comment' && (
+                              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.content}</p>
+                            )}
                             <p className="text-[10px] text-gray-400 mt-1">{formatDate(n.created_at)}</p>
                           </div>
                         </Link>
