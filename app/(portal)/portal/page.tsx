@@ -175,11 +175,13 @@ function ProjectCard({ project }: { project: Project }) {
 
   const cardContent = (
     <>
-      <div className="border-b border-gray-100 relative">
-        <CardPreview previewToken={project.preview_token} />
+      <div className="border-b border-gray-100 relative overflow-hidden">
+        <div className={isLocked ? 'blur-sm scale-105' : ''}>
+          <CardPreview previewToken={project.preview_token} />
+        </div>
         {isLocked && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-            <Lock size={24} className="text-gray-300" />
+          <div className="absolute inset-0 bg-white/40 flex items-center justify-center">
+            <Lock size={24} className="text-gray-400" />
           </div>
         )}
       </div>
