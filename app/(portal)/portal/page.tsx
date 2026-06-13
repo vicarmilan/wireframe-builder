@@ -50,7 +50,12 @@ export default function PortalPage() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[...Array(2)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl h-40 animate-pulse border border-gray-100" />
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6">
+                <div className="skeleton w-10 h-10 rounded-xl mb-4" />
+                <div className="skeleton h-4 w-2/5 mb-2" />
+                <div className="skeleton h-3 w-1/4 mb-5" />
+                <div className="skeleton h-3 w-24" />
+              </div>
             ))}
           </div>
         ) : !data?.projects.length ? (
