@@ -225,10 +225,10 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
       </header>
 
       {/* Page content */}
-      <div className="max-w-5xl mx-auto py-6 px-4 space-y-2">
+      <div>
         {currentPage?.page_components.map((component) => (
           <div key={component.id} className="relative group">
-            <div className="rounded-xl overflow-hidden">
+            <div className="overflow-hidden">
               <WireframeComponent component={component} />
             </div>
 
@@ -260,7 +260,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
 
             {/* Comment panel */}
             {commenting === component.id && (
-              <div id={`feedback-panel-${component.id}`} className="mt-2 bg-white rounded-xl border border-gray-100 shadow-lg p-4 space-y-3">
+              <div id={`feedback-panel-${component.id}`} className="bg-white border-t border-gray-100 shadow-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium text-sm text-gray-900">Feedback geven</h4>
@@ -323,7 +323,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         ))}
 
         {currentPage?.page_components.length === 0 && (
-          <div className="text-center py-24 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
+          <div className="text-center py-24 text-gray-400 bg-white border-t border-dashed border-gray-200">
             Deze pagina heeft nog geen inhoud.
           </div>
         )}
