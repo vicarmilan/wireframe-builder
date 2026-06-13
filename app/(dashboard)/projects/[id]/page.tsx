@@ -603,18 +603,26 @@ function SitemapView({
   onDelete: (p: Page) => void
   onAddChild: (p: Page) => void
 }) {
+  const multipleRoots = tree.length > 1
   return (
-    <div className="flex gap-12 items-start justify-center flex-wrap min-w-max mx-auto">
+    <div className="relative flex gap-12 items-start justify-center flex-wrap min-w-max mx-auto">
+      {/* Horizontal line connecting top-level pages */}
+      {multipleRoots && (
+        <div className="absolute top-0 left-[72px] right-[72px] h-px bg-gray-200 pointer-events-none" />
+      )}
       {tree.map((root) => (
-        <SitemapNode
-          key={root.id}
-          page={root}
-          projectId={projectId}
-          isRoot
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddChild={onAddChild}
-        />
+        <div key={root.id} className="flex flex-col items-center">
+          {/* Vertical stub above each root card */}
+          {multipleRoots && <div className="w-px h-8 bg-gray-200" />}
+          <SitemapNode
+            page={root}
+            projectId={projectId}
+            isRoot
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddChild={onAddChild}
+          />
+        </div>
       ))}
     </div>
   )
