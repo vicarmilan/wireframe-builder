@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Eye, Link2, Trash2, AlertTriangle, Users, Building2, Bell, X, Lock, MessageCircle, CheckCircle2, ExternalLink } from 'lucide-react'
+import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Eye, Link2, Trash2, AlertTriangle, Users, Building2, Bell, X, Lock, MessageCircle, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Project, PageComponent, ProjectStatus } from '@/types'
@@ -156,7 +156,6 @@ export default function DashboardPage() {
                         <Link
                           key={n.id}
                           href={href}
-                          target="_blank"
                           onClick={() => setShowNotifs(false)}
                           className="flex gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 cursor-pointer group"
                         >
@@ -172,7 +171,6 @@ export default function DashboardPage() {
                             <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.content}</p>
                             <p className="text-[10px] text-gray-400 mt-1">{formatDate(n.created_at)}</p>
                           </div>
-                          <ExternalLink size={12} className="text-gray-300 group-hover:text-blue-400 flex-shrink-0 mt-1 transition-colors" />
                         </Link>
                       )
                     })

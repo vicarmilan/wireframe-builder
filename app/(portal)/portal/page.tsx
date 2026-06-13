@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useUser, UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { Layout, Clock, Lock, MessageCircle, CheckCircle2, Bell, X, ExternalLink } from 'lucide-react'
+import { Layout, Clock, Lock, MessageCircle, CheckCircle2, Bell, X } from 'lucide-react'
 import { Project, PageComponent, ProjectStatus } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
 
@@ -184,7 +184,6 @@ export default function PortalPage() {
                           </div>
                           <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.content}</p>
                         </div>
-                        <ExternalLink size={12} className="text-gray-300 group-hover:text-blue-400 flex-shrink-0 mt-1 transition-colors" />
                       </Link>
                     ))
                   )}
