@@ -250,7 +250,8 @@ export default function DashboardPage() {
   )
 }
 
-const PREVIEW_SCALE = 0.32
+const PREVIEW_INNER_WIDTH = 1280
+const PREVIEW_SCALE = 0.27
 const PREVIEW_HEIGHT = 180
 
 function CardPreview({ projectId }: { projectId: string }) {
@@ -285,8 +286,17 @@ function CardPreview({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div style={{ height: PREVIEW_HEIGHT, overflow: 'hidden', background: 'white' }}>
-      <div style={{ zoom: PREVIEW_SCALE, width: `${100 / PREVIEW_SCALE}%`, pointerEvents: 'none', userSelect: 'none' }}>
+    <div style={{ height: PREVIEW_HEIGHT, overflow: 'hidden', position: 'relative', background: 'white' }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: PREVIEW_INNER_WIDTH,
+        transformOrigin: 'top left',
+        transform: `scale(${PREVIEW_SCALE})`,
+        pointerEvents: 'none',
+        userSelect: 'none',
+      }}>
         {components.map((comp) => (
           <WireframeComponent key={comp.id} component={comp} editing={false} onPropChange={() => {}} />
         ))}
