@@ -86,22 +86,12 @@ body {
   display: none !important;
 }
 
-/* Remove the orange diagonal dev-mode stripe from the Clerk sidebar */
-.clerk-profile-modal .cl-navbar::before,
-.clerk-profile-modal .cl-navbar::after,
-.clerk-profile-modal [class*="cl-navbar"]::before,
-.clerk-profile-modal [class*="cl-navbar"]::after {
-  display: none !important;
-}
-
-/* The stripe is applied as a background-image on the card/navbar wrapper */
-.clerk-profile-modal .cl-navbar,
-.clerk-profile-modal [class*="cl-navbar"] {
-  background-image: none !important;
-  background: #f9fafb !important;
-}
-
-.clerk-profile-modal .cl-card,
-.clerk-profile-modal [class*="cl-card"] {
+/* Strip Clerk's orange dev-mode diagonal stripe from every element in the modal */
+.clerk-profile-modal div,
+.clerk-profile-modal aside,
+.clerk-profile-modal nav,
+.clerk-profile-modal section,
+.clerk-profile-modal div::before,
+.clerk-profile-modal div::after {
   background-image: none !important;
 }
