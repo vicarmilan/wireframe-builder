@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useUser, UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { Layout, Clock, Lock, MessageCircle, CheckCircle2 } from 'lucide-react'
