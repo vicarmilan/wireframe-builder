@@ -4,6 +4,7 @@ import { useState, useEffect, use, useRef } from 'react'
 import {
   ArrowLeft, Plus, FileText, ExternalLink, Copy, Check, Code2,
   GripVertical, Pencil, Trash2, X, AlertTriangle, Users, UserPlus, UserMinus,
+  List, Network,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Project, Page } from '@/types'
@@ -106,6 +107,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [deletingPage, setDeletingPage] = useState<Page | null>(null)
   const [showMembers, setShowMembers] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'sitemap'>('list')
 
   // DnD state
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -338,7 +340,25 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
 
       <main className="max-w-4xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Pagina&apos;s</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">Pagina&apos;s</h2>
+            <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <List size={13} />
+                Lijst
+              </button>
+              <button
+                onClick={() => setViewMode('sitemap')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'sitemap' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <Network size={13} />
+                Sitemap
+              </button>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowImport(true)}
@@ -377,6 +397,16 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 Pagina toevoegen
               </button>
             </div>
+          </div>
+        ) : viewMode === 'sitemap' ? (
+          <div className="bg-white rounded-xl border border-gray-100 overflow-x-auto p-8">
+            <SitemapView
+              tree={tree}
+              projectId={id}
+              onEdit={(page) => setEditingPage(page)}
+              onDelete={(page) => setDeletingPage(page)}
+              onAddChild={(page) => { setNewPageParent({ id: page.id, name: page.name }); setShowNewPage(true) }}
+            />
           </div>
         ) : (
           <DndContext
@@ -460,6 +490,130 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           onDeleted={() => { window.location.href = '/dashboard' }}
         />
       )}
+    </div>
+  )
+}
+
+function SitemapNode({
+  page,
+  projectId,
+  isRoot = false,
+  onEdit,
+  onDelete,
+  onAddChild,
+}: {
+  page: Page
+  projectId: string
+  isRoot?: boolean
+  onEdit: (p: Page) => void
+  onDelete: (p: Page) => void
+  onAddChild: (p: Page) => void
+}) {
+  const children = page.children ?? []
+  return (
+    <div className="flex flex-col items-center">
+      {/* Node */}
+      <div className="group relative">
+        <Link
+          href={`/projects/${projectId}/${page.id}`}
+          className={`flex flex-col items-center gap-1 px-4 py-3 rounded-xl border text-center w-36 transition-all hover:border-blue-300 hover:shadow-sm ${
+            isRoot
+              ? 'bg-[#2563EB] border-blue-600 text-white'
+              : 'bg-white border-gray-200 text-gray-900'
+          }`}
+        >
+          <FileText size={14} className={isRoot ? 'text-blue-200' : 'text-gray-400'} />
+          <span className={`text-xs font-semibold leading-tight line-clamp-2 ${isRoot ? 'text-white' : 'text-gray-800'}`}>
+            {page.name}
+          </span>
+          <span className={`text-[10px] truncate max-w-full ${isRoot ? 'text-blue-200' : 'text-gray-400'}`}>
+            /{page.slug}
+          </span>
+        </Link>
+        {/* Hover actions */}
+        <div className="absolute -top-2 -right-2 hidden group-hover:flex items-center gap-0.5 bg-white border border-gray-100 rounded-lg shadow-md p-0.5 z-10">
+          <button
+            onClick={() => onAddChild(page)}
+            className="p-1 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
+            title="Subpagina toevoegen"
+          >
+            <Plus size={11} />
+          </button>
+          <button
+            onClick={() => onEdit(page)}
+            className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            title="Bewerken"
+          >
+            <Pencil size={11} />
+          </button>
+          <button
+            onClick={() => onDelete(page)}
+            className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+            title="Verwijderen"
+          >
+            <Trash2 size={11} />
+          </button>
+        </div>
+      </div>
+
+      {/* Children */}
+      {children.length > 0 && (
+        <div className="flex flex-col items-center">
+          {/* Vertical line down from parent */}
+          <div className="w-px h-8 bg-gray-200" />
+          {/* Row of children */}
+          <div className="relative flex items-start gap-6">
+            {/* Horizontal connector spanning all children */}
+            {children.length > 1 && (
+              <div className="absolute top-0 left-[calc(50%_/_var(--n))] right-[calc(50%_/_var(--n))] h-px bg-gray-200"
+                style={{ left: `calc(50% / ${children.length})`, right: `calc(50% / ${children.length})` }}
+              />
+            )}
+            {children.map((child) => (
+              <div key={child.id} className="flex flex-col items-center">
+                <div className="w-px h-8 bg-gray-200" />
+                <SitemapNode
+                  page={child}
+                  projectId={projectId}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onAddChild={onAddChild}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SitemapView({
+  tree,
+  projectId,
+  onEdit,
+  onDelete,
+  onAddChild,
+}: {
+  tree: Page[]
+  projectId: string
+  onEdit: (p: Page) => void
+  onDelete: (p: Page) => void
+  onAddChild: (p: Page) => void
+}) {
+  return (
+    <div className="flex gap-12 items-start justify-center flex-wrap min-w-max mx-auto">
+      {tree.map((root) => (
+        <SitemapNode
+          key={root.id}
+          page={root}
+          projectId={projectId}
+          isRoot
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAddChild={onAddChild}
+        />
+      ))}
     </div>
   )
 }
