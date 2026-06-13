@@ -4,10 +4,11 @@ import { useState, useEffect, useRef } from 'react'
 import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Eye, Link2, Trash2, AlertTriangle, Users, Building2, Bell, X } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Project } from '@/types'
+import { Project, PageComponent } from '@/types'
 import { formatDate } from '@/lib/utils'
 import NewProjectModal from '@/components/editor/NewProjectModal'
 import EditProjectModal from '@/components/editor/EditProjectModal'
+import WireframeComponent from '@/components/wireframes/WireframeComponent'
 
 interface Notification {
   id: string
@@ -249,6 +250,51 @@ export default function DashboardPage() {
   )
 }
 
+const PREVIEW_SCALE = 0.32
+const PREVIEW_HEIGHT = 180
+
+function CardPreview({ projectId }: { projectId: string }) {
+  const [components, setComponents] = useState<PageComponent[] | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/pages`)
+      .then((r) => r.json())
+      .then((pages) => {
+        if (!Array.isArray(pages) || pages.length === 0) { setComponents([]); return }
+        const firstPage = pages.sort((a: { order: number }, b: { order: number }) => a.order - b.order)[0]
+        return fetch(`/api/pages/${firstPage.id}/components`).then((r) => r.json())
+      })
+      .then((comps) => {
+        if (!comps) return
+        const sorted = Array.isArray(comps) ? comps.sort((a: PageComponent, b: PageComponent) => a.order - b.order) : []
+        setComponents(sorted.slice(0, 3))
+      })
+      .catch(() => setComponents([]))
+  }, [projectId])
+
+  if (components === null) {
+    return <div className="skeleton w-full" style={{ height: PREVIEW_HEIGHT }} />
+  }
+
+  if (components.length === 0) {
+    return (
+      <div className="w-full bg-gray-50 flex items-center justify-center text-gray-300 text-xs" style={{ height: PREVIEW_HEIGHT }}>
+        Geen componenten
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ height: PREVIEW_HEIGHT, overflow: 'hidden', background: 'white' }}>
+      <div style={{ zoom: PREVIEW_SCALE, width: `${100 / PREVIEW_SCALE}%`, pointerEvents: 'none', userSelect: 'none' }}>
+        {components.map((comp) => (
+          <WireframeComponent key={comp.id} component={comp} editing={false} onPropChange={() => {}} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ProjectCard({ project, onEdit, onMarkRead, onDelete }: { project: Project; onEdit: () => void; onMarkRead: (id: string) => void; onDelete: () => void }) {
   const unread = project.unread_comments ?? 0
   const [copied, setCopied] = useState(false)
@@ -271,85 +317,95 @@ function ProjectCard({ project, onEdit, onMarkRead, onDelete }: { project: Proje
   }
 
   return (
-    <div className="relative bg-white rounded-xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group">
+    <div className="relative bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group overflow-hidden">
       {/* Unread badge */}
       {unread > 0 && (
-        <div className="absolute -top-2 -right-2 z-10">
+        <div className="absolute top-2 left-2 z-10">
           <button
             onClick={handleMarkRead}
             title="Markeer als gelezen"
-            className="flex items-center justify-center w-6 h-6 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-md transition-colors"
+            className="flex items-center justify-center w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-full shadow-md transition-colors"
           >
             {unread > 9 ? '9+' : unread}
           </button>
         </div>
       )}
 
-      {/* Action icons */}
-      <div className="absolute top-4 right-4 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Action icons — float over preview */}
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <Link
           href={`/preview/${project.preview_token}`}
           target="_blank"
           onClick={(e) => e.stopPropagation()}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-500 transition-colors"
+          className="p-1.5 rounded-lg bg-white/80 backdrop-blur-sm hover:bg-white text-gray-500 hover:text-blue-500 shadow-sm transition-colors"
           title="Preview openen"
         >
-          <Eye size={14} />
+          <Eye size={13} />
         </Link>
         <button
           onClick={handleCopyLink}
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-1.5 rounded-lg bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm transition-colors"
           title={copied ? 'Gekopieerd!' : 'Link kopiëren'}
         >
-          <Link2 size={14} className={copied ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'} />
+          <Link2 size={13} className={copied ? 'text-green-500' : 'text-gray-500 hover:text-gray-700'} />
         </button>
         <button
           onClick={(e) => { e.preventDefault(); onEdit() }}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          className="p-1.5 rounded-lg bg-white/80 backdrop-blur-sm hover:bg-white text-gray-500 hover:text-gray-700 shadow-sm transition-colors"
           title="Bewerken"
         >
-          <Pencil size={14} />
+          <Pencil size={13} />
         </button>
         <button
           onClick={(e) => { e.preventDefault(); onDelete() }}
-          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+          className="p-1.5 rounded-lg bg-white/80 backdrop-blur-sm hover:bg-white text-gray-500 hover:text-red-500 shadow-sm transition-colors"
           title="Verwijderen"
         >
-          <Trash2 size={14} />
+          <Trash2 size={13} />
         </button>
       </div>
 
+      {/* Preview thumbnail */}
       <Link href={`/projects/${project.id}`} className="block">
-        <div className="flex items-start mb-4">
-          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-100">
-            {project.logo_url ? (
-              <Image
-                src={project.logo_url}
-                alt={project.client_name}
-                width={40}
-                height={40}
-                className="w-full h-full object-contain p-0.5"
-              />
-            ) : (
-              <span className="text-gray-400 font-bold text-lg group-hover:text-blue-600 transition-colors">
-                {project.client_name.charAt(0).toUpperCase()}
+        <div className="border-b border-gray-100">
+          <CardPreview projectId={project.id} />
+        </div>
+
+        {/* Card info */}
+        <div className="p-4">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-100">
+              {project.logo_url ? (
+                <Image
+                  src={project.logo_url}
+                  alt={project.client_name}
+                  width={28}
+                  height={28}
+                  className="w-full h-full object-contain p-0.5"
+                />
+              ) : (
+                <span className="text-gray-400 font-bold text-sm group-hover:text-blue-600 transition-colors">
+                  {project.client_name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-gray-900 text-sm truncate">{project.name}</h3>
+              <p className="text-xs text-gray-400 truncate">{project.client_name}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <span className="flex items-center gap-1">
+              <Clock size={11} />
+              {formatDate(project.updated_at)}
+            </span>
+            {unread > 0 && (
+              <span className="flex items-center gap-1 text-orange-500 font-medium">
+                <MessageSquare size={11} />
+                {unread} nieuwe {unread === 1 ? 'reactie' : 'reacties'}
               </span>
             )}
           </div>
-        </div>
-        <h3 className="font-semibold text-gray-900 mb-1">{project.name}</h3>
-        <p className="text-sm text-gray-500 mb-4">{project.client_name}</p>
-        <div className="flex items-center gap-4 text-xs text-gray-400">
-          <span className="flex items-center gap-1">
-            <Clock size={12} />
-            {formatDate(project.updated_at)}
-          </span>
-          {unread > 0 && (
-            <span className="flex items-center gap-1 text-orange-500 font-medium">
-              <MessageSquare size={12} />
-              {unread} nieuwe {unread === 1 ? 'reactie' : 'reacties'}
-            </span>
-          )}
         </div>
       </Link>
     </div>
