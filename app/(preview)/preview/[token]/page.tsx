@@ -662,20 +662,30 @@ function CommentItem({
           const reacted = reactions.filter((r) => r.reaction === key)
           const mine = reacted.some((r) => r.author_email === currentEmail)
           return (
-            <button
-              key={key}
-              onClick={() => toggleReaction(key)}
-              disabled={!currentEmail}
-              title={reacted.map((r) => r.author_email).join(', ') || undefined}
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs border transition-colors ${
-                mine
-                  ? 'bg-blue-50 border-blue-200 text-blue-700'
-                  : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-              } ${!currentEmail ? 'opacity-50 cursor-default' : ''}`}
-            >
-              <span>{emoji}</span>
-              {reacted.length > 0 && <span className="font-medium">{reacted.length}</span>}
-            </button>
+            <div key={key} className="relative group/reaction">
+              <button
+                onClick={() => toggleReaction(key)}
+                disabled={!currentEmail}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs border transition-colors ${
+                  mine
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                } ${!currentEmail ? 'opacity-50 cursor-default' : ''}`}
+              >
+                <span>{emoji}</span>
+                {reacted.length > 0 && <span className="font-medium">{reacted.length}</span>}
+              </button>
+              {reacted.length > 0 && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/reaction:block z-20 pointer-events-none">
+                  <div className="bg-gray-900 text-white text-[11px] rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                    {reacted.map((r) => (
+                      <div key={r.id}>{r.author_email}</div>
+                    ))}
+                  </div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                </div>
+              )}
+            </div>
           )
         })}
       </div>
