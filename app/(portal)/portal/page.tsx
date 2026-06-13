@@ -160,6 +160,14 @@ function StatusBadge({ status, clientAccess }: { status: ProjectStatus; clientAc
       </span>
     )
   }
+  if (status === 'feedback') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+        <MessageCircle size={10} />
+        Feedback in behandeling
+      </span>
+    )
+  }
   return (
     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
       <CheckCircle2 size={10} />

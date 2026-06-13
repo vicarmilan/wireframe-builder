@@ -337,6 +337,14 @@ function DashboardStatusBadge({ status, clientAccess }: { status: ProjectStatus;
       </span>
     )
   }
+  if (status === 'feedback') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full">
+        <MessageCircle size={9} />
+        Feedback verwerken
+      </span>
+    )
+  }
   return (
     <span className="inline-flex items-center gap-1 text-[10px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
       <CheckCircle2 size={9} />

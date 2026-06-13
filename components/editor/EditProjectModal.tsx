@@ -27,9 +27,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
 
   function handleStatusChange(next: ProjectStatus) {
     setStatus(next)
-    // Sync access with status
-    if (next === 'in_progress') setClientAccess(false)
-    else setClientAccess(true)
+    setClientAccess(next !== 'in_progress')
   }
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -176,22 +174,17 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
               <div className="flex gap-2">
                 {([
-                  { value: 'in_progress', label: 'In ontwikkeling', access: false },
-                  { value: 'pending_review', label: 'Wachten op feedback', access: true },
-                  { value: 'approved', label: 'Goedgekeurd', access: true },
-                ] as { value: ProjectStatus; label: string; access: boolean }[]).map((option) => (
+                  { value: 'in_progress',    label: 'In ontwikkeling',      active: 'bg-gray-100 border-gray-300 text-gray-700' },
+                  { value: 'pending_review', label: 'Wachten op feedback',  active: 'bg-orange-50 border-orange-300 text-orange-700' },
+                  { value: 'feedback',       label: 'Feedback verwerken',   active: 'bg-purple-50 border-purple-300 text-purple-700' },
+                  { value: 'approved',       label: 'Goedgekeurd',          active: 'bg-green-50 border-green-300 text-green-700' },
+                ] as { value: ProjectStatus; label: string; active: string }[]).map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => handleStatusChange(option.value)}
                     className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium border transition-colors ${
-                      status === option.value
-                        ? option.value === 'in_progress'
-                          ? 'bg-gray-100 border-gray-300 text-gray-700'
-                          : option.value === 'pending_review'
-                          ? 'bg-orange-50 border-orange-300 text-orange-700'
-                          : 'bg-green-50 border-green-300 text-green-700'
-                        : 'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
+                      status === option.value ? option.active : 'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
                     }`}
                   >
                     {option.label}

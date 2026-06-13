@@ -50,11 +50,11 @@ export async function POST(request: Request) {
         .select('status, owner_id')
         .eq('id', projectId)
         .single()
-      // Only reset if pending_review and the commenter is NOT the project owner (i.e. it's a client)
+      // Switch to 'feedback' when a client comments on a pending_review project
       if (proj?.status === 'pending_review' && proj.owner_id !== body.author_id) {
         await supabase
           .from('projects')
-          .update({ status: 'in_progress' })
+          .update({ status: 'feedback' })
           .eq('id', projectId)
       }
     }

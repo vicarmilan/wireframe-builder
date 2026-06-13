@@ -22,7 +22,7 @@ export interface Profile {
   created_at: string
 }
 
-export type ProjectStatus = 'in_progress' | 'pending_review' | 'approved'
+export type ProjectStatus = 'in_progress' | 'pending_review' | 'feedback' | 'approved'
 
 export interface Project {
   id: string
