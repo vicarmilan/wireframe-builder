@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Eye, Link2, Trash2, AlertTriangle, Users, Building2, Bell, X } from 'lucide-react'
+import { Plus, FolderOpen, MessageSquare, Clock, Pencil, Eye, Link2, Trash2, AlertTriangle, Users, Building2, Bell, X, Lock, MessageCircle, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Project, PageComponent } from '@/types'
+import { Project, PageComponent, ProjectStatus } from '@/types'
 import { formatDate } from '@/lib/utils'
 import NewProjectModal from '@/components/editor/NewProjectModal'
 import EditProjectModal from '@/components/editor/EditProjectModal'
@@ -312,6 +312,31 @@ function CardPreview({ projectId }: { projectId: string }) {
   )
 }
 
+function DashboardStatusBadge({ status }: { status: ProjectStatus }) {
+  if (status === 'in_progress') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+        <Lock size={9} />
+        In behandeling
+      </span>
+    )
+  }
+  if (status === 'pending_review') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">
+        <MessageCircle size={9} />
+        Wachten op feedback
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
+      <CheckCircle2 size={9} />
+      Goedgekeurd
+    </span>
+  )
+}
+
 function ProjectCard({ project, onEdit, onMarkRead, onDelete }: { project: Project; onEdit: () => void; onMarkRead: (id: string) => void; onDelete: () => void }) {
   const unread = project.unread_comments ?? 0
   const [copied, setCopied] = useState(false)
@@ -418,6 +443,9 @@ function ProjectCard({ project, onEdit, onMarkRead, onDelete }: { project: Proje
               <h3 className="font-semibold text-gray-900 text-sm truncate">{project.name}</h3>
               <p className="text-xs text-gray-400 truncate">{project.client_name}</p>
             </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <DashboardStatusBadge status={project.status ?? 'in_progress'} />
           </div>
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <span className="flex items-center gap-1">

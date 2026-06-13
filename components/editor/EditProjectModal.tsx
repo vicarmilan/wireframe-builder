@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { X, Upload, Trash2, AlertTriangle } from 'lucide-react'
-import { Project } from '@/types'
+import { Project, ProjectStatus } from '@/types'
 import Image from 'next/image'
 
 interface Client {
@@ -22,6 +22,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
   const [clientId, setClientId] = useState((project as Project & { client_id?: string }).client_id ?? '')
   const [clients, setClients] = useState<Client[]>([])
   const [logoUrl, setLogoUrl] = useState(project.logo_url || '')
+  const [status, setStatus] = useState<ProjectStatus>(project.status ?? 'in_progress')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -60,7 +61,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
     const res = await fetch(`/api/projects/${project.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), client_id: clientId, logo_url: logoUrl || null }),
+      body: JSON.stringify({ name: name.trim(), client_id: clientId, logo_url: logoUrl || null, status }),
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error || 'Opslaan mislukt'); setSaving(false); return }
@@ -160,6 +161,35 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
                   Alle gebruikers van dit bedrijf krijgen automatisch toegang tot de preview.
                 </p>
               )}
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+              <div className="flex gap-2">
+                {([
+                  { value: 'in_progress', label: 'In behandeling' },
+                  { value: 'pending_review', label: 'Wachten op feedback' },
+                  { value: 'approved', label: 'Goedgekeurd' },
+                ] as { value: ProjectStatus; label: string }[]).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setStatus(option.value)}
+                    className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium border transition-colors ${
+                      status === option.value
+                        ? option.value === 'in_progress'
+                          ? 'bg-gray-100 border-gray-300 text-gray-700'
+                          : option.value === 'pending_review'
+                          ? 'bg-orange-50 border-orange-300 text-orange-700'
+                          : 'bg-green-50 border-green-300 text-green-700'
+                        : 'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {error && <p className="text-red-500 text-sm">{error}</p>}

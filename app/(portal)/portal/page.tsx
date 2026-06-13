@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useUser, UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { Layout, Clock } from 'lucide-react'
-import { Project, PageComponent } from '@/types'
+import { Layout, Clock, Lock, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { Project, PageComponent, ProjectStatus } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
 
 const PREVIEW_INNER_WIDTH = 1280
@@ -143,23 +143,75 @@ export default function PortalPage() {
   )
 }
 
+function StatusBadge({ status }: { status: ProjectStatus }) {
+  if (status === 'in_progress') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+        <Lock size={10} />
+        In behandeling
+      </span>
+    )
+  }
+  if (status === 'pending_review') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+        <MessageCircle size={10} />
+        Wachten op feedback
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+      <CheckCircle2 size={10} />
+      Goedgekeurd
+    </span>
+  )
+}
+
 function ProjectCard({ project }: { project: Project }) {
+  const status = project.status ?? 'in_progress'
+  const isLocked = status === 'in_progress'
+
+  const cardContent = (
+    <>
+      <div className="border-b border-gray-100 relative">
+        <CardPreview previewToken={project.preview_token} />
+        {isLocked && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+            <Lock size={24} className="text-gray-300" />
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <div className="mb-2">
+          <StatusBadge status={status} />
+        </div>
+        <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{project.name}</h3>
+        <p className="text-xs text-gray-400">{project.client_name}</p>
+        {!isLocked && (
+          <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-300">
+            <Clock size={11} />
+            {new Date(project.updated_at).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </div>
+        )}
+      </div>
+    </>
+  )
+
+  if (isLocked) {
+    return (
+      <div className="block bg-white rounded-2xl border border-gray-100 overflow-hidden opacity-80 cursor-default">
+        {cardContent}
+      </div>
+    )
+  }
+
   return (
     <Link
       href={`/preview/${project.preview_token}`}
       className="block bg-white rounded-2xl border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all overflow-hidden"
     >
-      <div className="border-b border-gray-100">
-        <CardPreview previewToken={project.preview_token} />
-      </div>
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{project.name}</h3>
-        <p className="text-xs text-gray-400">{project.client_name}</p>
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-300">
-          <Clock size={11} />
-          {new Date(project.updated_at).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' })}
-        </div>
-      </div>
+      {cardContent}
     </Link>
   )
 }

@@ -32,6 +32,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.name !== undefined) allowed.name = body.name
   if (body.logo_url !== undefined) allowed.logo_url = body.logo_url
   if (body.client_access !== undefined) allowed.client_access = body.client_access
+  if (body.status !== undefined) allowed.status = body.status
 
   // client_id drives client_name — fetch name from clients table when set
   if (body.client_id !== undefined) {

@@ -22,6 +22,8 @@ export interface Profile {
   created_at: string
 }
 
+export type ProjectStatus = 'in_progress' | 'pending_review' | 'approved'
+
 export interface Project {
   id: string
   name: string
@@ -29,6 +31,7 @@ export interface Project {
   logo_url?: string
   owner_id: string
   preview_token: string
+  status: ProjectStatus
   created_at: string
   updated_at: string
   // computed

@@ -21,7 +21,7 @@ export async function GET() {
     // Get all projects for this client
     const { data: projects } = await supabase
       .from('projects')
-      .select('id, name, client_name, logo_url, preview_token, created_at, updated_at')
+      .select('id, name, client_name, logo_url, preview_token, created_at, updated_at, status')
       .eq('client_id', clientUser.client_id)
       .order('updated_at', { ascending: false })
 
