@@ -183,17 +183,13 @@ export default function DashboardPage() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl p-6 border border-gray-100 animate-pulse">
-                {/* Logo placeholder */}
-                <div className="w-10 h-10 bg-gray-100 rounded-lg mb-4" />
-                {/* Title */}
-                <div className="h-4 bg-gray-100 rounded-md w-3/5 mb-2" />
-                {/* Subtitle */}
-                <div className="h-3 bg-gray-100 rounded-md w-2/5 mb-6" />
-                {/* Bottom meta */}
-                <div className="flex items-center gap-3 mt-auto pt-4 border-t border-gray-50">
-                  <div className="h-3 bg-gray-100 rounded-md w-20" />
-                  <div className="h-3 bg-gray-100 rounded-md w-14" />
+              <div key={i} className="bg-white rounded-xl p-6 border border-gray-100">
+                <div className="skeleton w-10 h-10 rounded-lg mb-4" />
+                <div className="skeleton h-4 w-3/5 mb-2" />
+                <div className="skeleton h-3 w-2/5 mb-6" />
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
+                  <div className="skeleton h-3 w-20" />
+                  <div className="skeleton h-3 w-14" />
                 </div>
               </div>
             ))}

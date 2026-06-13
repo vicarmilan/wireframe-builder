@@ -223,48 +223,48 @@ function EditorSkeleton() {
     <div className="flex-1 overflow-y-auto bg-[#F0F2F5]">
       <div className="max-w-5xl mx-auto py-8 px-6 space-y-2">
         {/* Nav skeleton */}
-        <div className="rounded-xl overflow-hidden bg-white animate-pulse">
+        <div className="rounded-xl overflow-hidden bg-white">
           <div className="flex items-center justify-between px-8 py-4">
-            <div className="h-5 w-24 bg-gray-100 rounded-md" />
+            <div className="skeleton h-5 w-24" />
             <div className="flex gap-6">
               {[80, 64, 72, 56, 68].map((w, i) => (
-                <div key={i} className="h-3.5 bg-gray-100 rounded-md" style={{ width: w }} />
+                <div key={i} className="skeleton h-3.5" style={{ width: w }} />
               ))}
             </div>
-            <div className="h-8 w-24 bg-gray-100 rounded-lg" />
+            <div className="skeleton h-8 w-24 rounded-lg" />
           </div>
         </div>
 
         {/* Hero skeleton */}
-        <div className="rounded-xl overflow-hidden bg-white animate-pulse">
+        <div className="rounded-xl overflow-hidden bg-white">
           <div className="px-16 py-14 flex flex-col items-center gap-4">
-            <div className="h-3 w-20 bg-gray-100 rounded-full" />
-            <div className="h-8 w-96 bg-gray-100 rounded-lg" />
-            <div className="h-8 w-72 bg-gray-100 rounded-lg" />
-            <div className="h-4 w-80 bg-gray-100 rounded-md mt-1" />
-            <div className="h-4 w-64 bg-gray-100 rounded-md" />
+            <div className="skeleton h-3 w-20 rounded-full" />
+            <div className="skeleton h-8 w-96" />
+            <div className="skeleton h-8 w-72" />
+            <div className="skeleton h-4 w-80 mt-1" />
+            <div className="skeleton h-4 w-64" />
             <div className="flex gap-3 mt-3">
-              <div className="h-10 w-32 bg-gray-100 rounded-lg" />
-              <div className="h-10 w-28 bg-gray-100 rounded-lg" />
+              <div className="skeleton h-10 w-32 rounded-lg" />
+              <div className="skeleton h-10 w-28 rounded-lg" />
             </div>
           </div>
-          <div className="mx-8 mb-8 h-48 bg-gray-100 rounded-xl" />
+          <div className="skeleton mx-8 mb-8 h-48 rounded-xl" />
         </div>
 
         {/* Features skeleton */}
-        <div className="rounded-xl overflow-hidden bg-white animate-pulse">
+        <div className="rounded-xl overflow-hidden bg-white">
           <div className="px-12 py-10">
             <div className="flex flex-col items-center gap-3 mb-8">
-              <div className="h-5 w-48 bg-gray-100 rounded-lg" />
-              <div className="h-3.5 w-72 bg-gray-100 rounded-md" />
+              <div className="skeleton h-5 w-48" />
+              <div className="skeleton h-3.5 w-72" />
             </div>
             <div className="grid grid-cols-3 gap-5">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="space-y-3 p-5 border border-gray-100 rounded-xl">
-                  <div className="h-8 w-8 bg-gray-100 rounded-lg" />
-                  <div className="h-4 w-28 bg-gray-100 rounded-md" />
-                  <div className="h-3 w-full bg-gray-100 rounded-md" />
-                  <div className="h-3 w-4/5 bg-gray-100 rounded-md" />
+                  <div className="skeleton h-8 w-8 rounded-lg" />
+                  <div className="skeleton h-4 w-28" />
+                  <div className="skeleton h-3 w-full" />
+                  <div className="skeleton h-3 w-4/5" />
                 </div>
               ))}
             </div>
@@ -272,11 +272,11 @@ function EditorSkeleton() {
         </div>
 
         {/* CTA skeleton */}
-        <div className="rounded-xl overflow-hidden bg-gray-100 animate-pulse">
+        <div className="rounded-xl overflow-hidden bg-white">
           <div className="px-16 py-12 flex flex-col items-center gap-4">
-            <div className="h-6 w-64 bg-gray-200 rounded-lg" />
-            <div className="h-4 w-80 bg-gray-200 rounded-md" />
-            <div className="h-10 w-36 bg-gray-200 rounded-lg mt-2" />
+            <div className="skeleton h-6 w-64" />
+            <div className="skeleton h-4 w-80" />
+            <div className="skeleton h-10 w-36 rounded-lg mt-2" />
           </div>
         </div>
       </div>

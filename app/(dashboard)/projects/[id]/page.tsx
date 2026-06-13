@@ -235,41 +235,39 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       <div className="min-h-screen bg-[#F0F2F5]">
         {/* Header skeleton */}
         <header className="bg-white border-b border-gray-200 px-8 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4 animate-pulse">
-            <div className="w-5 h-5 bg-gray-100 rounded-md" />
+          <div className="flex items-center gap-4">
+            <div className="skeleton w-5 h-5" />
             <div>
-              <div className="h-4 w-36 bg-gray-100 rounded-md mb-1.5" />
-              <div className="h-3 w-24 bg-gray-100 rounded-md" />
+              <div className="skeleton h-4 w-36 mb-1.5" />
+              <div className="skeleton h-3 w-24" />
             </div>
           </div>
-          <div className="flex items-center gap-3 animate-pulse">
-            <div className="h-9 w-24 bg-gray-100 rounded-lg" />
-            <div className="h-9 w-28 bg-gray-100 rounded-lg" />
-            <div className="h-9 w-20 bg-gray-100 rounded-lg" />
+          <div className="flex items-center gap-3">
+            <div className="skeleton h-9 w-24 rounded-lg" />
+            <div className="skeleton h-9 w-28 rounded-lg" />
+            <div className="skeleton h-9 w-20 rounded-lg" />
           </div>
         </header>
 
-        <main className="max-w-4xl mx-auto px-8 py-10 animate-pulse">
-          {/* Section title */}
+        <main className="max-w-4xl mx-auto px-8 py-10">
           <div className="flex items-center justify-between mb-6">
-            <div className="h-5 w-24 bg-gray-200 rounded-md" />
+            <div className="skeleton h-5 w-24" />
             <div className="flex gap-2">
-              <div className="h-9 w-36 bg-gray-200 rounded-lg" />
-              <div className="h-9 w-36 bg-gray-200 rounded-lg" />
+              <div className="skeleton h-9 w-36 rounded-lg" />
+              <div className="skeleton h-9 w-36 rounded-lg" />
             </div>
           </div>
 
-          {/* Page list skeleton */}
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-50">
             {[160, 120, 180, 140].map((w, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3.5">
-                <div className="w-3.5 h-3.5 bg-gray-100 rounded-sm flex-shrink-0" />
-                <div className="w-4 h-4 bg-gray-100 rounded flex-shrink-0" />
+                <div className="skeleton w-3.5 h-3.5 flex-shrink-0" />
+                <div className="skeleton w-4 h-4 flex-shrink-0" />
                 <div className="flex-1">
-                  <div className="h-3.5 bg-gray-100 rounded-md mb-1.5" style={{ width: w }} />
-                  <div className="h-2.5 bg-gray-100 rounded-md w-20" />
+                  <div className="skeleton h-3.5 mb-1.5" style={{ width: w }} />
+                  <div className="skeleton h-2.5 w-20" />
                 </div>
-                <div className="h-2.5 bg-gray-100 rounded-md w-16 ml-auto" />
+                <div className="skeleton h-2.5 w-16 ml-auto" />
               </div>
             ))}
           </div>
