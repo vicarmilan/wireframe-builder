@@ -312,12 +312,20 @@ function CardPreview({ projectId }: { projectId: string }) {
   )
 }
 
-function DashboardStatusBadge({ status }: { status: ProjectStatus }) {
+function DashboardStatusBadge({ status, clientAccess }: { status: ProjectStatus; clientAccess?: boolean }) {
+  if (clientAccess === false) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+        <Lock size={9} />
+        In ontwikkeling
+      </span>
+    )
+  }
   if (status === 'in_progress') {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
         <Lock size={9} />
-        In behandeling
+        In ontwikkeling
       </span>
     )
   }
@@ -445,7 +453,7 @@ function ProjectCard({ project, onEdit, onMarkRead, onDelete }: { project: Proje
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap mb-1.5">
-            <DashboardStatusBadge status={project.status ?? 'in_progress'} />
+            <DashboardStatusBadge status={project.status ?? 'in_progress'} clientAccess={(project as Project & { client_access?: boolean }).client_access} />
           </div>
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <span className="flex items-center gap-1">

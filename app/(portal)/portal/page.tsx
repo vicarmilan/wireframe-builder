@@ -143,12 +143,12 @@ export default function PortalPage() {
   )
 }
 
-function StatusBadge({ status }: { status: ProjectStatus }) {
-  if (status === 'in_progress') {
+function StatusBadge({ status, clientAccess }: { status: ProjectStatus; clientAccess?: boolean }) {
+  if (clientAccess === false || status === 'in_progress') {
     return (
       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
         <Lock size={10} />
-        In behandeling
+        In ontwikkeling
       </span>
     )
   }
@@ -185,7 +185,7 @@ function ProjectCard({ project }: { project: Project }) {
       </div>
       <div className="p-4">
         <div className="mb-2">
-          <StatusBadge status={status} />
+          <StatusBadge status={status} clientAccess={(project as Project & { client_access?: boolean }).client_access} />
         </div>
         <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{project.name}</h3>
         <p className="text-xs text-gray-400">{project.client_name}</p>

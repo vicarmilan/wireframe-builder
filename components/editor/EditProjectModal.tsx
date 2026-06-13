@@ -165,10 +165,9 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Status (als toegang aan staat)</label>
               <div className="flex gap-2">
                 {([
-                  { value: 'in_progress', label: 'In behandeling' },
                   { value: 'pending_review', label: 'Wachten op feedback' },
                   { value: 'approved', label: 'Goedgekeurd' },
                 ] as { value: ProjectStatus; label: string }[]).map((option) => (
@@ -178,9 +177,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
                     onClick={() => setStatus(option.value)}
                     className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium border transition-colors ${
                       status === option.value
-                        ? option.value === 'in_progress'
-                          ? 'bg-gray-100 border-gray-300 text-gray-700'
-                          : option.value === 'pending_review'
+                        ? option.value === 'pending_review'
                           ? 'bg-orange-50 border-orange-300 text-orange-700'
                           : 'bg-green-50 border-green-300 text-green-700'
                         : 'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
