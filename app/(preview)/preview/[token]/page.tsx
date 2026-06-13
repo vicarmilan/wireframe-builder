@@ -318,7 +318,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
         )}
 
         <div className="flex items-center gap-2">
-          <NotificationBell apiUrl="/api/portal/notifications" />
+          <NotificationBell apiUrl="/api/portal/notifications" historyUrl="/portal/notifications" />
           {approved ? (
             <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
               <CheckCircle2 size={13} />

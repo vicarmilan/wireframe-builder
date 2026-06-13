@@ -2,43 +2,28 @@ import { auth, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
-export async function GET() {
-  const { userId } = await auth()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+async function getAdminContext(userId: string) {
   const supabase = createServiceClient()
+  const clerk = await clerkClient()
+  const adminUser = await clerk.users.getUser(userId)
+  const adminEmail = adminUser.emailAddresses[0]?.emailAddress ?? ''
 
   const { data: projects } = await supabase
     .from('projects')
     .select('id, name, client_name, preview_token')
     .eq('owner_id', userId)
 
-  if (!projects?.length) return NextResponse.json([])
-
-  // Get admin's own email to exclude their own reactions
-  const clerk = await clerkClient()
-  const adminUser = await clerk.users.getUser(userId)
-  const adminEmail = adminUser.emailAddresses[0]?.emailAddress ?? ''
+  if (!projects?.length) return null
 
   const projectIds = projects.map((p) => p.id)
-
-  const { data: pages } = await supabase
-    .from('pages')
-    .select('id, project_id')
-    .in('project_id', projectIds)
-
+  const { data: pages } = await supabase.from('pages').select('id, project_id').in('project_id', projectIds)
   const pageIds = (pages ?? []).map((p) => p.id)
-  if (!pageIds.length) return NextResponse.json([])
+  if (!pageIds.length) return null
 
-  const { data: components } = await supabase
-    .from('page_components')
-    .select('id, page_id')
-    .in('page_id', pageIds)
-
+  const { data: components } = await supabase.from('page_components').select('id, page_id').in('page_id', pageIds)
   const componentIds = (components ?? []).map((c) => c.id)
-  if (!componentIds.length) return NextResponse.json([])
+  if (!componentIds.length) return null
 
-  // Build lookup maps
   const compToPage: Record<string, string> = {}
   const pageToProject: Record<string, string> = {}
   const projectMap: Record<string, { name: string; client_name: string; preview_token: string }> = {}
@@ -46,23 +31,20 @@ export async function GET() {
   ;(pages ?? []).forEach((p) => { pageToProject[p.id] = p.project_id })
   projects.forEach((p) => { projectMap[p.id] = { name: p.name, client_name: p.client_name, preview_token: p.preview_token } })
 
-  // Fetch unread comments
-  const { data: comments } = await supabase
-    .from('comments')
-    .select('id, page_component_id, author_name, author_email, content, created_at')
-    .in('page_component_id', componentIds)
-    .is('read_at', null)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  return { supabase, adminEmail, componentIds, compToPage, pageToProject, projectMap }
+}
 
-  // Fetch unread reactions by others (not the admin themselves)
-  const { data: reactions } = await supabase
-    .from('comment_reactions')
-    .select('id, comment_id, author_name, author_email, reaction, created_at, comments(page_component_id, content)')
-    .is('admin_read_at', null)
-    .neq('author_email', adminEmail)
-    .order('created_at', { ascending: false })
-    .limit(50)
+export async function GET(request: Request) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const all = searchParams.get('all') === 'true'
+
+  const ctx = await getAdminContext(userId)
+  if (!ctx) return NextResponse.json([])
+
+  const { supabase, adminEmail, componentIds, compToPage, pageToProject, projectMap } = ctx
 
   const enriched = (item: { page_component_id: string }) => {
     const pageId = compToPage[item.page_component_id]
@@ -70,6 +52,28 @@ export async function GET() {
     const project = projectId ? projectMap[projectId] : null
     return { pageId, projectId, project }
   }
+
+  // Fetch comments
+  let commentQuery = supabase
+    .from('comments')
+    .select('id, page_component_id, author_name, author_email, content, created_at, read_at')
+    .in('page_component_id', componentIds)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (!all) commentQuery = commentQuery.is('read_at', null)
+
+  const { data: comments } = await commentQuery
+
+  // Fetch reactions
+  let reactionQuery = supabase
+    .from('comment_reactions')
+    .select('id, comment_id, author_name, author_email, reaction, created_at, admin_read_at, comments(page_component_id, content)')
+    .neq('author_email', adminEmail)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (!all) reactionQuery = reactionQuery.is('admin_read_at', null)
+
+  const { data: reactions } = await reactionQuery
 
   const commentNotifs = (comments ?? []).map((c) => {
     const { pageId, projectId, project } = enriched(c)
@@ -81,6 +85,7 @@ export async function GET() {
       author_email: c.author_email,
       content: c.content,
       created_at: c.created_at,
+      read_at: c.read_at ?? null,
       page_id: pageId ?? null,
       project_id: projectId,
       project_name: project?.name ?? '',
@@ -106,6 +111,7 @@ export async function GET() {
         reaction: r.reaction,
         comment_preview: comment.content,
         created_at: r.created_at,
+        read_at: r.admin_read_at ?? null,
         page_id: pageId ?? null,
         project_id: projectId,
         project_name: project?.name ?? '',
@@ -114,55 +120,51 @@ export async function GET() {
       }
     })
 
-  const all = [...commentNotifs, ...reactionNotifs].sort(
+  const result = [...commentNotifs, ...reactionNotifs].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )
 
-  return NextResponse.json(all)
+  return NextResponse.json(result)
 }
 
-// Mark all as read
+// Mark one or all notifications as read
 export async function PATCH(request: Request) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { projectId } = await request.json()
-  if (!projectId) return NextResponse.json({ error: 'Missing projectId' }, { status: 400 })
+  let body: { notifId?: string } = {}
+  try { body = await request.json() } catch { /* empty body = mark all */ }
 
-  const supabase = createServiceClient()
+  const ctx = await getAdminContext(userId)
+  if (!ctx) return NextResponse.json({ ok: true })
 
-  const { data: project } = await supabase
-    .from('projects')
-    .select('id')
-    .eq('id', projectId)
-    .eq('owner_id', userId)
-    .single()
-
-  if (!project) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-  const { data: pages } = await supabase.from('pages').select('id').eq('project_id', projectId)
-  const pageIds = (pages ?? []).map((p) => p.id)
-  if (!pageIds.length) return NextResponse.json({ ok: true })
-
-  const { data: components } = await supabase.from('page_components').select('id').in('page_id', pageIds)
-  const componentIds = (components ?? []).map((c) => c.id)
-  if (!componentIds.length) return NextResponse.json({ ok: true })
-
+  const { supabase, componentIds } = ctx
   const now = new Date().toISOString()
 
+  // Mark single notification
+  if (body.notifId) {
+    const [type, rawId] = body.notifId.split(/-(.+)/)
+    if (type === 'comment') {
+      await supabase.from('comments').update({ read_at: now }).eq('id', rawId)
+    } else if (type === 'reaction') {
+      await supabase.from('comment_reactions').update({ admin_read_at: now }).eq('id', rawId)
+    }
+    return NextResponse.json({ ok: true })
+  }
+
+  // Mark all as read
   await supabase
     .from('comments')
     .update({ read_at: now })
     .in('page_component_id', componentIds)
     .is('read_at', null)
 
-  // Mark reactions read via comment join
-  const { data: commentsInProject } = await supabase
+  const { data: commentsAll } = await supabase
     .from('comments')
     .select('id')
     .in('page_component_id', componentIds)
 
-  const commentIds = (commentsInProject ?? []).map((c) => c.id)
+  const commentIds = (commentsAll ?? []).map((c) => c.id)
   if (commentIds.length) {
     await supabase
       .from('comment_reactions')

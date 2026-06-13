@@ -102,7 +102,7 @@ export default function PortalPage() {
               {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.primaryEmailAddress?.emailAddress}
             </span>
           )}
-          <NotificationBell apiUrl="/api/portal/notifications" />
+          <NotificationBell apiUrl="/api/portal/notifications" historyUrl="/portal/notifications" />
           <UserButton />
         </div>
       </header>

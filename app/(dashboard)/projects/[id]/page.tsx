@@ -305,7 +305,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <NotificationBell apiUrl="/api/notifications" />
+          <NotificationBell apiUrl="/api/notifications" historyUrl="/dashboard/notifications" />
           <button
             onClick={() => setShowEdit(true)}
             className="flex items-center gap-2 border border-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors"

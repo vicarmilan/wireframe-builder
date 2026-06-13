@@ -91,7 +91,7 @@ export default function DashboardPage() {
             Gebruikers
           </Link>
 
-          <NotificationBell apiUrl="/api/notifications" />
+          <NotificationBell apiUrl="/api/notifications" historyUrl="/dashboard/notifications" />
 
           <button
             onClick={() => setShowNew(true)}
