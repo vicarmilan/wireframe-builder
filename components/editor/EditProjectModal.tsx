@@ -23,6 +23,14 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
   const [clients, setClients] = useState<Client[]>([])
   const [logoUrl, setLogoUrl] = useState(project.logo_url || '')
   const [status, setStatus] = useState<ProjectStatus>(project.status ?? 'in_progress')
+  const [clientAccess, setClientAccess] = useState<boolean>((project as Project & { client_access?: boolean }).client_access ?? true)
+
+  function handleStatusChange(next: ProjectStatus) {
+    setStatus(next)
+    // Sync access with status
+    if (next === 'in_progress') setClientAccess(false)
+    else setClientAccess(true)
+  }
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -61,7 +69,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
     const res = await fetch(`/api/projects/${project.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), client_id: clientId, logo_url: logoUrl || null, status }),
+      body: JSON.stringify({ name: name.trim(), client_id: clientId, logo_url: logoUrl || null, status, client_access: clientAccess }),
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error || 'Opslaan mislukt'); setSaving(false); return }
@@ -165,19 +173,22 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Status (als toegang aan staat)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
               <div className="flex gap-2">
                 {([
-                  { value: 'pending_review', label: 'Wachten op feedback' },
-                  { value: 'approved', label: 'Goedgekeurd' },
-                ] as { value: ProjectStatus; label: string }[]).map((option) => (
+                  { value: 'in_progress', label: 'In ontwikkeling', access: false },
+                  { value: 'pending_review', label: 'Wachten op feedback', access: true },
+                  { value: 'approved', label: 'Goedgekeurd', access: true },
+                ] as { value: ProjectStatus; label: string; access: boolean }[]).map((option) => (
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setStatus(status === option.value ? 'in_progress' : option.value)}
+                    onClick={() => handleStatusChange(option.value)}
                     className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium border transition-colors ${
                       status === option.value
-                        ? option.value === 'pending_review'
+                        ? option.value === 'in_progress'
+                          ? 'bg-gray-100 border-gray-300 text-gray-700'
+                          : option.value === 'pending_review'
                           ? 'bg-orange-50 border-orange-300 text-orange-700'
                           : 'bg-green-50 border-green-300 text-green-700'
                         : 'bg-white border-gray-200 text-gray-400 hover:bg-gray-50'
@@ -187,6 +198,11 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
                   </button>
                 ))}
               </div>
+              <p className="text-xs text-gray-400 mt-1.5">
+                {status === 'in_progress'
+                  ? '🔒 Toegang staat uit — klanten kunnen de preview niet bekijken.'
+                  : '🔓 Toegang staat aan — klanten kunnen de preview openen.'}
+              </p>
             </div>
 
             {error && <p className="text-red-500 text-sm">{error}</p>}
