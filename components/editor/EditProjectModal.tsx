@@ -174,7 +174,7 @@ export default function EditProjectModal({ project, onClose, onUpdated, onDelete
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setStatus(option.value)}
+                    onClick={() => setStatus(status === option.value ? 'in_progress' : option.value)}
                     className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium border transition-colors ${
                       status === option.value
                         ? option.value === 'pending_review'

@@ -36,6 +36,32 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Auto-reset project status from pending_review to in_progress when a client posts a comment
+  try {
+    const { data: comp } = await supabase
+      .from('page_components')
+      .select('page_id, pages(project_id)')
+      .eq('id', body.page_component_id)
+      .single()
+    const projectId = (comp?.pages as { project_id?: string } | null)?.project_id
+    if (projectId) {
+      const { data: proj } = await supabase
+        .from('projects')
+        .select('status, owner_id')
+        .eq('id', projectId)
+        .single()
+      // Only reset if pending_review and the commenter is NOT the project owner (i.e. it's a client)
+      if (proj?.status === 'pending_review' && proj.owner_id !== body.author_id) {
+        await supabase
+          .from('projects')
+          .update({ status: 'in_progress' })
+          .eq('id', projectId)
+      }
+    }
+  } catch (err) {
+    console.error('Status reset mislukt:', err)
+  }
+
   // Send email notification if configured
   if (process.env.RESEND_API_KEY && process.env.NOTIFICATION_EMAIL) {
     try {
