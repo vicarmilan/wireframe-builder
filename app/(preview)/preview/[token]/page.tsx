@@ -398,6 +398,7 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
                         key={c.id}
                         comment={c}
                         currentEmail={authorEmail}
+                        currentName={authorName}
                         onDeleted={(id) => setComments((prev) => ({
                           ...prev,
                           [component.id]: prev[component.id].filter((x) => x.id !== id),
@@ -524,6 +525,7 @@ interface Reaction {
   id: string
   comment_id: string
   author_email: string
+  author_name: string
   reaction: string
 }
 
@@ -536,11 +538,13 @@ const REACTIONS = [
 function CommentItem({
   comment,
   currentEmail,
+  currentName,
   onDeleted,
   onEdited,
 }: {
   comment: Comment
   currentEmail: string
+  currentName: string
   onDeleted: (id: string) => void
   onEdited: (updated: Comment) => void
 }) {
@@ -561,7 +565,7 @@ function CommentItem({
     const res = await fetch('/api/comments/reactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ comment_id: comment.id, author_email: currentEmail, reaction: reactionKey }),
+      body: JSON.stringify({ comment_id: comment.id, author_email: currentEmail, author_name: currentName, reaction: reactionKey }),
     })
     const data = await res.json()
     if (data.removed) {
@@ -676,13 +680,18 @@ function CommentItem({
                 {reacted.length > 0 && <span className="font-medium">{reacted.length}</span>}
               </button>
               {reacted.length > 0 && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/reaction:block z-20 pointer-events-none">
-                  <div className="bg-gray-900 text-white text-[11px] rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                <div className="absolute bottom-full left-0 mb-2 hidden group-hover/reaction:block z-20 pointer-events-none">
+                  <div className="bg-gray-900 text-white text-[11px] rounded-lg px-2.5 py-2 whitespace-nowrap shadow-lg space-y-1.5 min-w-max">
                     {reacted.map((r) => (
-                      <div key={r.id}>{r.author_email}</div>
+                      <div key={r.id} className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                          {(r.author_name || r.author_email).charAt(0).toUpperCase()}
+                        </div>
+                        <span>{r.author_name || r.author_email}</span>
+                      </div>
                     ))}
                   </div>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                  <div className="absolute top-full left-3 border-4 border-transparent border-t-gray-900" />
                 </div>
               )}
             </div>

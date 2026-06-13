@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
 // POST toggle a reaction
 export async function POST(request: Request) {
-  const { comment_id, author_email, reaction } = await request.json()
+  const { comment_id, author_email, author_name, reaction } = await request.json()
   if (!comment_id || !author_email || !reaction) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
@@ -38,15 +38,13 @@ export async function POST(request: Request) {
     .single()
 
   if (existing) {
-    // Remove reaction (toggle off)
     await supabase.from('comment_reactions').delete().eq('id', existing.id)
     return NextResponse.json({ removed: true })
   }
 
-  // Add reaction
   const { data, error } = await supabase
     .from('comment_reactions')
-    .insert({ comment_id, author_email, reaction })
+    .insert({ comment_id, author_email, author_name: author_name || author_email, reaction })
     .select()
     .single()
 
