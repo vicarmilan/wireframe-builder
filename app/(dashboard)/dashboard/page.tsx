@@ -342,13 +342,21 @@ function ProjectCard({ project, onEdit, onMarkRead, onDelete }: { project: Proje
         >
           <Eye size={13} />
         </Link>
-        <button
-          onClick={handleCopyLink}
-          className="p-1.5 rounded-lg bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm transition-colors"
-          title={copied ? 'Gekopieerd!' : 'Link kopiëren'}
-        >
-          <Link2 size={13} className={copied ? 'text-green-500' : 'text-gray-500 hover:text-gray-700'} />
-        </button>
+        <div className="relative">
+          <button
+            onClick={handleCopyLink}
+            className="p-1.5 rounded-lg bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm transition-colors"
+            title="Link kopiëren"
+          >
+            <Link2 size={13} className={copied ? 'text-green-500' : 'text-gray-500 hover:text-gray-700'} />
+          </button>
+          {copied && (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 text-white text-[11px] font-medium rounded-md whitespace-nowrap pointer-events-none">
+              Link gekopieerd!
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+            </div>
+          )}
+        </div>
         <button
           onClick={(e) => { e.preventDefault(); onEdit() }}
           className="p-1.5 rounded-lg bg-white/80 backdrop-blur-sm hover:bg-white text-gray-500 hover:text-gray-700 shadow-sm transition-colors"
