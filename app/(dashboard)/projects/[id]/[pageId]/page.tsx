@@ -18,6 +18,7 @@ export default function PageEditorPage({
   const { id, pageId } = use(params)
   const [project, setProject] = useState<Project | null>(null)
   const [page, setPage] = useState<Page | null>(null)
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null)
@@ -44,6 +45,7 @@ export default function PageEditorPage({
       setProject(proj)
       setPage(pg)
       setComponents(Array.isArray(comps) ? comps : [])
+      setLoading(false)
     })
   }, [id, pageId, setComponents])
 
@@ -188,16 +190,20 @@ export default function PageEditorPage({
       <div className="flex flex-1 overflow-hidden">
         {sidebarOpen && <ComponentSidebar onAdd={handleAddComponent} />}
 
-        <EditorCanvas
-          components={components}
-          selectedId={selectedId}
-          onSelect={setSelected}
-          onReorder={handleReorder}
-          onPropChange={handlePropChange}
-          onAddClick={() => setSidebarOpen(true)}
-          onAddAt={handleAddAt}
-          justDroppedId={justDroppedId}
-        />
+        {loading ? (
+          <EditorSkeleton />
+        ) : (
+          <EditorCanvas
+            components={components}
+            selectedId={selectedId}
+            onSelect={setSelected}
+            onReorder={handleReorder}
+            onPropChange={handlePropChange}
+            onAddClick={() => setSidebarOpen(true)}
+            onAddAt={handleAddAt}
+            justDroppedId={justDroppedId}
+          />
+        )}
 
         {selectedComponent && (
           <PropertiesPanel
@@ -207,6 +213,72 @@ export default function PageEditorPage({
             onDelete={() => handleDelete(selectedComponent.id)}
           />
         )}
+      </div>
+    </div>
+  )
+}
+
+function EditorSkeleton() {
+  return (
+    <div className="flex-1 overflow-y-auto bg-[#F0F2F5]">
+      <div className="max-w-5xl mx-auto py-8 px-6 space-y-2">
+        {/* Nav skeleton */}
+        <div className="rounded-xl overflow-hidden bg-white animate-pulse">
+          <div className="flex items-center justify-between px-8 py-4">
+            <div className="h-5 w-24 bg-gray-100 rounded-md" />
+            <div className="flex gap-6">
+              {[80, 64, 72, 56, 68].map((w, i) => (
+                <div key={i} className="h-3.5 bg-gray-100 rounded-md" style={{ width: w }} />
+              ))}
+            </div>
+            <div className="h-8 w-24 bg-gray-100 rounded-lg" />
+          </div>
+        </div>
+
+        {/* Hero skeleton */}
+        <div className="rounded-xl overflow-hidden bg-white animate-pulse">
+          <div className="px-16 py-14 flex flex-col items-center gap-4">
+            <div className="h-3 w-20 bg-gray-100 rounded-full" />
+            <div className="h-8 w-96 bg-gray-100 rounded-lg" />
+            <div className="h-8 w-72 bg-gray-100 rounded-lg" />
+            <div className="h-4 w-80 bg-gray-100 rounded-md mt-1" />
+            <div className="h-4 w-64 bg-gray-100 rounded-md" />
+            <div className="flex gap-3 mt-3">
+              <div className="h-10 w-32 bg-gray-100 rounded-lg" />
+              <div className="h-10 w-28 bg-gray-100 rounded-lg" />
+            </div>
+          </div>
+          <div className="mx-8 mb-8 h-48 bg-gray-100 rounded-xl" />
+        </div>
+
+        {/* Features skeleton */}
+        <div className="rounded-xl overflow-hidden bg-white animate-pulse">
+          <div className="px-12 py-10">
+            <div className="flex flex-col items-center gap-3 mb-8">
+              <div className="h-5 w-48 bg-gray-100 rounded-lg" />
+              <div className="h-3.5 w-72 bg-gray-100 rounded-md" />
+            </div>
+            <div className="grid grid-cols-3 gap-5">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="space-y-3 p-5 border border-gray-100 rounded-xl">
+                  <div className="h-8 w-8 bg-gray-100 rounded-lg" />
+                  <div className="h-4 w-28 bg-gray-100 rounded-md" />
+                  <div className="h-3 w-full bg-gray-100 rounded-md" />
+                  <div className="h-3 w-4/5 bg-gray-100 rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* CTA skeleton */}
+        <div className="rounded-xl overflow-hidden bg-gray-100 animate-pulse">
+          <div className="px-16 py-12 flex flex-col items-center gap-4">
+            <div className="h-6 w-64 bg-gray-200 rounded-lg" />
+            <div className="h-4 w-80 bg-gray-200 rounded-md" />
+            <div className="h-10 w-36 bg-gray-200 rounded-lg mt-2" />
+          </div>
+        </div>
       </div>
     </div>
   )
