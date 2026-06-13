@@ -114,87 +114,30 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
       <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="skeleton w-7 h-7 rounded-lg" />
-          <div className="skeleton h-4 w-32" />
+          <div className="skeleton h-4 w-40" />
         </div>
         <div className="flex gap-1">
-          <div className="skeleton h-7 w-16 rounded-lg" />
-          <div className="skeleton h-7 w-20 rounded-lg" />
-          <div className="skeleton h-7 w-14 rounded-lg" />
+          <div className="skeleton h-7 w-9 rounded-lg" />
+          <div className="skeleton h-7 w-28 rounded-lg" />
         </div>
-        <div className="skeleton h-4 w-40 hidden md:block" />
+        <div className="skeleton h-7 w-7 rounded-lg" />
       </header>
 
-      {/* Page blocks skeleton */}
-      <div>
-        {/* Nav block */}
-        <div className="bg-white border-b border-gray-50">
-          <div className="flex items-center justify-between px-10 py-4">
-            <div className="skeleton h-5 w-28" />
-            <div className="flex gap-6">
-              {[72, 60, 80, 56, 68].map((w, i) => (
-                <div key={i} className="skeleton h-3.5" style={{ width: w }} />
-              ))}
-            </div>
-            <div className="skeleton h-9 w-24 rounded-lg" />
-          </div>
-        </div>
-
-        {/* Hero block */}
-        <div className="bg-white py-20 flex flex-col items-center gap-5 px-8">
-          <div className="skeleton h-3 w-20 rounded-full" />
-          <div className="skeleton h-9 w-[420px] max-w-full" />
-          <div className="skeleton h-9 w-72 max-w-full" />
-          <div className="skeleton h-4 w-80 max-w-full mt-1" />
-          <div className="skeleton h-4 w-60 max-w-full" />
-          <div className="flex gap-3 mt-4">
-            <div className="skeleton h-11 w-32 rounded-lg" />
-            <div className="skeleton h-11 w-28 rounded-lg" />
-          </div>
-          <div className="skeleton w-full max-w-2xl h-52 rounded-xl mt-4" />
-        </div>
-
-        {/* Features block */}
-        <div className="bg-[#F8F9FA] py-16 px-10">
-          <div className="flex flex-col items-center gap-3 mb-10">
-            <div className="skeleton h-6 w-52" />
-            <div className="skeleton h-4 w-80" />
-          </div>
-          <div className="grid grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="bg-white rounded-xl p-6 space-y-3">
-                <div className="skeleton h-9 w-9 rounded-lg" />
-                <div className="skeleton h-4 w-28" />
-                <div className="skeleton h-3 w-full" />
-                <div className="skeleton h-3 w-5/6" />
+      {/* Page list skeleton */}
+      <div className="max-w-3xl mx-auto px-6 py-10">
+        <div className="skeleton h-6 w-48 mb-2 rounded" />
+        <div className="skeleton h-4 w-72 mb-6 rounded" />
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          {[160, 120, 96, 140].map((w, i) => (
+            <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-gray-100 last:border-0">
+              <div className="skeleton w-8 h-8 rounded-lg flex-shrink-0" />
+              <div className="flex-1">
+                <div className="skeleton h-4 rounded mb-1.5" style={{ width: w }} />
+                <div className="skeleton h-3 w-16 rounded" />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA block */}
-        <div className="bg-white py-16 flex flex-col items-center gap-4 px-8">
-          <div className="skeleton h-7 w-64" />
-          <div className="skeleton h-4 w-80" />
-          <div className="skeleton h-11 w-36 rounded-lg mt-2" />
-        </div>
-
-        {/* Footer block */}
-        <div className="bg-gray-900 py-12 px-10">
-          <div className="flex justify-between max-w-4xl mx-auto">
-            <div className="space-y-3">
-              <div className="skeleton h-5 w-28" style={{ background: 'rgba(255,255,255,0.1)' }} />
-              <div className="skeleton h-3 w-48" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <div className="skeleton h-3 w-40" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="skeleton w-4 h-4 rounded" />
             </div>
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="space-y-2">
-                <div className="skeleton h-3.5 w-20" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                {[48, 56, 44, 52].map((w, j) => (
-                  <div key={j} className="skeleton h-3" style={{ width: w, background: 'rgba(255,255,255,0.07)' }} />
-                ))}
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
     </div>
