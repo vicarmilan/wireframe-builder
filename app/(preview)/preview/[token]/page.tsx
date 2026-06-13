@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { MessageSquare, X, Send, Check, ArrowLeft, Lock, Pencil, Trash2 } from 'lucide-react'
+import { MessageSquare, X, Send, Check, ArrowLeft, Lock, Pencil, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { useAuth, useUser } from '@clerk/nextjs'
 import { Project, Page, PageComponent, Comment } from '@/types'
 import WireframeComponent from '@/components/wireframes/WireframeComponent'
@@ -26,6 +26,8 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
   const [notFound, setNotFound] = useState(false)
   const [forbidden, setForbidden] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showApproval, setShowApproval] = useState(false)
+  const [approved, setApproved] = useState(false)
 
   const authorName = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.primaryEmailAddress?.emailAddress || '' : ''
   const authorEmail = user?.primaryEmailAddress?.emailAddress || ''
@@ -220,6 +222,12 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
   return (
     <div className="min-h-screen bg-[#F0F2F5]">
       {showOnboarding && <OnboardingModal onClose={handleOnboardingClose} />}
+      {showApproval && (
+        <ApprovalModal
+          onClose={() => setShowApproval(false)}
+          onConfirm={() => { setApproved(true); setShowApproval(false) }}
+        />
+      )}
       {/* Preview header */}
       <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
@@ -292,14 +300,21 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
           </div>
         )}
 
-        <div className="flex items-center gap-3">
-          {user && (
-            <span className="text-xs text-gray-400 hidden sm:block">{authorName}</span>
+        <div className="flex items-center gap-2">
+          {approved ? (
+            <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
+              <CheckCircle2 size={13} />
+              Goedgekeurd
+            </span>
+          ) : (
+            <button
+              onClick={() => setShowApproval(true)}
+              className="flex items-center gap-1.5 bg-[#2563EB] hover:bg-blue-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Check size={14} />
+              Wireframe goedkeuren
+            </button>
           )}
-          <div className="text-xs text-gray-400 items-center gap-1 hidden md:flex">
-            <MessageSquare size={12} />
-            Klik op een sectie om feedback te geven
-          </div>
           <button
             onClick={() => setShowOnboarding(true)}
             className="w-7 h-7 rounded-full border border-gray-200 text-gray-400 hover:text-[#2563EB] hover:border-blue-300 transition-colors text-xs font-bold flex items-center justify-center"
@@ -413,6 +428,77 @@ export default function PreviewPage({ params }: { params: Promise<{ token: strin
             Deze pagina heeft nog geen inhoud.
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function ApprovalModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) {
+  const [confirming, setConfirming] = useState(false)
+
+  function handleConfirm() {
+    setConfirming(true)
+    setTimeout(() => { onConfirm() }, 600)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+              <CheckCircle2 size={17} className="text-[#2563EB]" />
+            </div>
+            <h2 className="font-semibold text-gray-900">Wireframe goedkeuren</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 pb-2 space-y-4">
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Je staat op het punt de wireframe officieel goed te keuren. Dit betekent dat je akkoord gaat met de voorgestelde structuur en inhoud als basis voor het verdere ontwerp- en ontwikkelproces.
+          </p>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+            <AlertTriangle size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-800 space-y-1">
+              <p className="font-medium">Let op: dit is een definitieve beslissing</p>
+              <ul className="text-amber-700 space-y-0.5 list-disc list-inside text-xs leading-relaxed">
+                <li>Wijzigingen na goedkeuring kunnen extra kosten met zich meebrengen</li>
+                <li>Het ontwerpproces start op basis van deze wireframe</li>
+                <li>Structurele aanpassingen zijn nadien niet meer inbegrepen</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 py-5">
+          <button
+            onClick={onClose}
+            className="flex-1 border border-gray-200 text-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            Annuleren
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={confirming}
+            className="flex-1 bg-[#2563EB] hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+          >
+            {confirming ? (
+              <>
+                <Check size={14} />
+                Goedgekeurd!
+              </>
+            ) : (
+              'Ja, ik keur de wireframe goed'
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )
