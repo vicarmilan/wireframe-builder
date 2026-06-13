@@ -53,11 +53,12 @@ export async function GET(request: Request) {
     return { pageId, projectId, project }
   }
 
-  // Fetch comments
+  // Fetch comments by others (not the admin themselves)
   let commentQuery = supabase
     .from('comments')
     .select('id, page_component_id, author_name, author_email, content, created_at, read_at')
     .in('page_component_id', componentIds)
+    .neq('author_email', adminEmail)
     .order('created_at', { ascending: false })
     .limit(100)
   if (!all) commentQuery = commentQuery.is('read_at', null)

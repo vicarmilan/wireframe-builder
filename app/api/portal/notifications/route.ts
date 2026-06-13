@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
@@ -12,6 +12,11 @@ async function getClientContext(userId: string) {
     .single()
 
   if (!clientUser) return null
+
+  // Get the client's own email so we can exclude their own reactions
+  const clerk = await clerkClient()
+  const clerkUser = await clerk.users.getUser(userId)
+  const userEmail = clerkUser.emailAddresses[0]?.emailAddress ?? ''
 
   const { data: projects } = await supabase
     .from('projects')
@@ -36,7 +41,7 @@ async function getClientContext(userId: string) {
   ;(pages ?? []).forEach((p) => { pageToProject[p.id] = p.project_id })
   projects.forEach((p) => { projectMap[p.id] = { name: p.name, preview_token: p.preview_token } })
 
-  return { supabase, userId, componentIds, compToPage, pageToProject, projectMap }
+  return { supabase, userId, userEmail, componentIds, compToPage, pageToProject, projectMap }
 }
 
 export async function GET(request: Request) {
@@ -49,7 +54,7 @@ export async function GET(request: Request) {
   const ctx = await getClientContext(userId)
   if (!ctx) return NextResponse.json([])
 
-  const { supabase, componentIds, compToPage, pageToProject, projectMap } = ctx
+  const { supabase, userEmail, componentIds, compToPage, pageToProject, projectMap } = ctx
 
   const enriched = (pageComponentId: string) => {
     const pageId = compToPage[pageComponentId]
@@ -84,6 +89,7 @@ export async function GET(request: Request) {
     .from('comment_reactions')
     .select('id, comment_id, author_name, author_email, reaction, created_at, client_read_at')
     .in('comment_id', commentIds)
+    .neq('author_email', userEmail)
     .order('created_at', { ascending: false })
     .limit(100)
   if (!all) reactionQuery = reactionQuery.is('client_read_at', null)
