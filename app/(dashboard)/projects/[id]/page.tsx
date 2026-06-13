@@ -605,7 +605,8 @@ function SitemapView({
 }) {
   const multipleRoots = tree.length > 1
   return (
-    <div className="relative flex gap-12 items-start justify-center flex-wrap min-w-max mx-auto">
+    <div className="w-fit mx-auto">
+      <div className="relative flex gap-12 items-start">
       {/* Horizontal line connecting top-level pages */}
       {multipleRoots && (
         <div className="absolute top-0 left-[72px] right-[72px] h-px bg-gray-200 pointer-events-none" />
@@ -624,6 +625,7 @@ function SitemapView({
           />
         </div>
       ))}
+      </div>
     </div>
   )
 }
