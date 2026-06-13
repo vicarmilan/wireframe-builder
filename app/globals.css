@@ -77,3 +77,11 @@ body {
 .animate-slide-in {
   animation: slide-in 0.2s ease-out;
 }
+
+/* Hide Clerk branding footer globally */
+.cl-footer,
+[data-localization-key="footerPageLink__privacyPage"],
+[data-localization-key="footerPageLink__termsPage"],
+[class*="cl-footer"] {
+  display: none !important;
+}

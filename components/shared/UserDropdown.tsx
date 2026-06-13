@@ -100,7 +100,7 @@ export default function UserDropdown() {
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50"
           onClick={(e) => { if (e.target === e.currentTarget) setShowProfile(false) }}
         >
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowProfile(false)}
               className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors bg-white"
@@ -115,6 +115,8 @@ export default function UserDropdown() {
                   rootBox: { width: '100%' },
                   card: { border: 'none', boxShadow: 'none', borderRadius: 0, margin: 0 },
                   footer: { display: 'none' },
+                  footerAction: { display: 'none' },
+                  footerActionLink: { display: 'none' },
                   pageScrollBox: { padding: '24px 32px' },
                   navbar: {
                     background: '#f9fafb',
